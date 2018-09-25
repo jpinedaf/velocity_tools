@@ -1,0 +1,5 @@
+# log file and CASA last files
+*.log
+*.last
+#
+fits_files/
