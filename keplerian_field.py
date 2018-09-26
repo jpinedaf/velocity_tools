@@ -13,18 +13,25 @@ create_dummy_file=True
 ra0=15*(3+(30+ 25.6/60.)/60.)
 dec0= (32+(10+ 25.6/60.)/60.)
 # PA Angle in Degrees
-PA_Angle=45.
+PA_Angle=142.*u.deg
 # Inclination angle in Degrees
-inclination=42.
+inclination=42.*u.deg
 # Distance in pc
-distance=109.
+distance=110.02*u.pc
+# Outer radius in au
+R_out=300.*u.au
 # Stellar Mass in Solar Masses
-Mstar = 4.2
-#epsilon
-epsilon=5e-6*u.deg
+Mstar = 2.2*u.Msun
+#epsilon in au
+epsilon=10*u.au
+# V_lsr
+Vc= 5.2*u.km/u.s
+
+do_plot=True
+
 if create_dummy_file:
     # create dummy FITS file
-    dx = 50
+    dx = 1500
     data= np.zeros( (2*dx+1,2*dx+1))
     # hdu container
     hdu = fits.PrimaryHDU(data)
@@ -66,51 +73,40 @@ lon=radec_off[:].lon
 lat=radec_off[:].lat
 lon.shape=xx.shape
 lat.shape=xx.shape
-
-# plt.ion()
-# plt.figure(figsize=(12,6))
-# plt.subplot(1, 2, 1)
-# plt.imshow(lon.value, origin='lowest')
-# plt.title('$\Delta x$')
-# #
-# plt.subplot(1, 2, 2)
-# plt.imshow(lat.value, origin='lowest')
-# plt.title('$\Delta y$')
 # This plots the offset in x and y
 # This is all good now
-angle=np.deg2rad(PA_Angle)
-c, s = np.cos(angle), np.sin(angle)
+c, s = np.cos(PA_Angle), np.sin(PA_Angle)
 # Rotate the axes
-lon_PA = c*lon - s*lat
-lat_PA = s*lon + c*lat
+# lon_PA = c*lon - s*lat
+# lat_PA = s*lon + c*lat
+lat_PA = c*lat - s*lon
+lon_PA = s*lat + c*lon
 # Deprojection 
-lat_PA /= np.cos(np.deg2rad(inclination))
-
-dep_radius=np.clip(np.sqrt( lat_PA**2 + lon_PA**2), epsilon, None)
-Kep_velo = 29.78 * np.sqrt( Mstar / (distance *(dep_radius.to(u.arcsec)).value)) * np.sin(np.deg2rad(inclination)) * np.sign(lon_PA)
+lat_PA /= np.cos(inclination)
+dep_angle=np.sqrt( lat_PA**2 + lon_PA**2)
+angle_PA = np.arctan2(lat_PA, lon_PA)
 #
-# Plot
-# plt.figure(figsize=(12,6))
-# plt.subplot(1, 2, 1)
-# plt.imshow(lon_PA.value, origin='lowest')
-# plt.contour(lon_PA.value, c_levels=np.linspace(np.min(lon_PA.value),np.max(lon_PA.value),num=10), colors='k')
-# plt.plot( [50, 50+20*np.cos(angle +np.deg2rad(90.))],[50,50+20*np.sin(angle+np.deg2rad(90.))], color='red')
-# plt.title('$\Delta x_{PA}$')
-# #
-# plt.subplot(1, 2, 2)
-# plt.imshow(lat_PA.value, origin='lowest')
-# plt.contour(lat_PA.value, c_levels=np.linspace(np.min(lat_PA.value),np.max(lat_PA.value),num=10), colors='k')
-# plt.plot( [50, 50+20*np.cos(angle +np.deg2rad(90.))],[50,50+20*np.sin(angle+np.deg2rad(90.))], color='red')
-# plt.title('$\Delta y_{PA}$')
-# Plot
-plt.figure(figsize=(12,6))
-plt.subplot(1, 2, 1)
-plt.imshow(dep_radius.value, origin='lowest')
-plt.contour(dep_radius.value, c_levels=np.linspace(np.min(dep_radius.value),np.max(dep_radius.value),num=10), colors='k')
-plt.plot( [50, 50+20*np.cos(angle +np.deg2rad(90.))],[50,50+20*np.sin(angle+np.deg2rad(90.))], color='red')
-plt.title('Deprojected radius, $r_{PA,i}$')
+dep_radius=np.clip( dep_angle.to('', equivalencies=u.dimensionless_angles())*distance.to(u.au), epsilon.to(u.au), None)
+Kep_velo = 29.78 * np.sqrt( Mstar/u.Msun / (dep_radius/u.au)) * np.sin(inclination) * np.cos(angle_PA)*u.km/u.s
+Kep_velo += Vc
+Kep_velo[dep_radius > R_out] = np.nan
 #
-plt.subplot(1, 2, 2)
-plt.imshow(Kep_velo, origin='lowest', cmap='RdYlBu_r')
-plt.contour(Kep_velo, c_levels=np.linspace(np.min(Kep_velo),np.max(Kep_velo),num=10), colors='k')
-plt.title('Projected $V_{Kep}$')
+if do_plot:
+    # Plot
+    axes_extent=[ (lon.to(u.arcsec).value).max(), (lon.to(u.arcsec).value).min(),
+                  (lat.to(u.arcsec).value).min(), (lat.to(u.arcsec).value).max()]
+    plt.ion()
+    plt.figure(figsize=(12,6))
+    plt.subplot(1, 2, 1)
+    plt.imshow(dep_radius.value, origin='lowest', interpolation='none', extent=axes_extent)
+    x0, y0= w.wcs_world2pix( center.ra, center.dec, 1)
+    dx_line= (lat.to(u.arcsec).value).max() * 0.2
+    plt.contour(dep_radius.value, c_levels=np.linspace(np.min(dep_radius.value),np.max(dep_radius.value),num=10), colors='k', extent=axes_extent)
+    plt.plot( [0.0, dx_line*np.sin(PA_Angle)],[0.0,dx_line*np.cos(PA_Angle)], color='gray')
+    plt.plot( [0.0, dx_line*np.sin(PA_Angle+90.*u.deg)],[0.0,dx_line*np.cos(PA_Angle+90.*u.deg)], color='red')
+    plt.title('Deprojected radius, $r_{PA,i}$')
+    #
+    plt.subplot(1, 2, 2)
+    plt.imshow(Kep_velo.value, origin='lowest', cmap='RdYlBu_r', interpolation='none', extent=axes_extent)
+    plt.contour(Kep_velo.value, c_levels=np.linspace(np.nanmin(Kep_velo.value),np.nanmax(Kep_velo.value),num=10), colors='k', extent=axes_extent)
+    plt.title('Projected $V_{Kep}$')
