@@ -6,8 +6,11 @@ from astropy import wcs
 from astropy.coordinates import SkyCoord, SkyOffsetFrame, FK5
 
 file_in='fits_files/test_file.fits'
-
+file_out='fits_files/test_Vc.fits'
 create_dummy_file=True
+save_Vfield=True
+do_plot=True
+
 #
 # Central coordinate
 ra0=15*(3+(30+ 25.6/60.)/60.)
@@ -26,8 +29,6 @@ Mstar = 2.2*u.Msun
 epsilon=10*u.au
 # V_lsr
 Vc= 5.2*u.km/u.s
-
-do_plot=True
 
 if create_dummy_file:
     # create dummy FITS file
@@ -110,3 +111,8 @@ if do_plot:
     plt.imshow(Kep_velo.value, origin='lowest', cmap='RdYlBu_r', interpolation='none', extent=axes_extent)
     plt.contour(Kep_velo.value, c_levels=np.linspace(np.nanmin(Kep_velo.value),np.nanmax(Kep_velo.value),num=10), colors='k', extent=axes_extent)
     plt.title('Projected $V_{Kep}$')
+
+if save_Vfield:
+    header2=header
+    header2['BUNIT']='km/s'
+    fits.writeto( file_out, Kep_velo.value, header2)
