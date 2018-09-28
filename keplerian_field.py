@@ -3,52 +3,12 @@ from astropy.io import fits
 import matplotlib.pyplot as plt
 import astropy.units as u
 from astropy import wcs
-from astropy.coordinates import SkyCoord, SkyOffsetFrame, FK5
+from astropy.coordinates import SkyCoord, SkyOffsetFrame
 
-def example_Vlsr(file_in='fits_files/test_file.fits'):
-    """ How to use this thing
+class result_container:
+    """ Function to create class container
     """
-    # Central coordinate
-    ra0=15*(11+(33 + 25.321/60.)/60.)*u.deg
-    dec0=-1*(70+(11 + 41.209/60.)/60.)*u.deg
-    # ra0=15*(3+(30+ 25.6/60.)/60.)*u.deg
-    # dec0= (32+(10+ 25.6/60.)/60.)*u.deg
-    header=fits.getheader(file_in)
-    dep_radius, dep_angle, Kep_velo, dmaj, dmin = generate_Vlsr( header, ra0, dec0,
-        file_out='fits_files/test_Vc.fits', PA_Angle=0.*u.deg, #142.*u.deg,
-    # Inclination angle in Degrees
-    inclination=42.*u.deg,
-    # Distance in pc
-    distance=110.02*u.pc,
-    # Outer radius in au
-    R_out=300.*u.au,
-    # Stellar Mass in Solar Masses
-    Mstar = 2.2*u.Msun,
-    # V_lsr
-    Vc= 5.2*u.km/u.s, do_plot=False)
-
-    plt.figure(figsize=(12,6))
-    plt.subplot(1, 3, 1)
-    plt.imshow(dep_radius.value, origin='lowest', interpolation='none')
-    plt.title('Deprojected radius, $r_{PA,i}$')
-    plt.subplot(1, 3, 2)
-    plt.imshow(dep_angle.value, origin='lowest', interpolation='none')
-    plt.title('Deprojected Angle, $theta$')
-    plt.subplot(1, 3, 3)
-    plt.imshow(Kep_velo.value, origin='lowest', cmap='RdYlBu_r', interpolation='none')
-    plt.title('Projected $V_{Kep}$')
-
-    header2=header
-    header2['BUNIT']='km/s'
-    fits.writeto( 'fits_files/HD100546_Vc.fits', Kep_velo.value, header2, overwrite=True)
-
-    header2=header
-    header2['BUNIT']='au'
-    fits.writeto( 'fits_files/HD100546_Radius.fits', dep_radius.value, header2, overwrite=True)
-
-    header2=header
-    header2['BUNIT']='rad'
-    fits.writeto( 'fits_files/HD100546_theta.fits', dep_angle.value, header2, overwrite=True)
+    pass
 
 def _generate_dummy_file():
     """ 
@@ -103,6 +63,9 @@ def generate_Vlsr( header, ra0, dec0, file_out='fits_files/test_Vc.fits',
 
     radec = SkyCoord(world[0]*u.deg, world[1]*u.deg, frame='fk5')
     radec_off = radec.transform_to(center.skyoffset_frame())
+    #
+    # Ra = Lon, Dec = Lat
+    #
     lon=radec_off[:].lon
     lat=radec_off[:].lat
     lon.shape=xx.shape
@@ -111,15 +74,16 @@ def generate_Vlsr( header, ra0, dec0, file_out='fits_files/test_Vc.fits',
     # This is all good now
     c, s = np.cos(PA_Angle), np.sin(PA_Angle)
     # Rotate the axes
-    # lon_PA = c*lon - s*lat
-    # lat_PA = s*lon + c*lat
-    lat_PA = c*lat - s*lon
-    lon_PA = s*lat + c*lon
+    # Ra = Lon, Dec = Lat
+    lat_PA =  c*lat + s*lon
+    lon_PA = -s*lat + c*lon
     # Deprojection 
-    lat_PA /= np.cos(inclination)
-    # lon_PA /= np.cos(inclination)
+    # Major axis in in RA direction
+    # lat_PA /= np.cos(inclination)
+    lon_PA /= np.cos(inclination)
     dep_angle=np.sqrt( lat_PA**2 + lon_PA**2)
-    angle_PA = np.arctan2(lat_PA, lon_PA)
+    # angle_PA = np.arctan2(lon_PA, lat_PA)
+    angle_PA = np.arctan2(lon_PA, lat_PA)
     #
     dep_radius=np.clip( dep_angle.to('', equivalencies=u.dimensionless_angles())*distance.to(u.au), epsilon.to(u.au), None)
     Kep_velo = 29.78 * np.sqrt( Mstar/u.Msun / (dep_radius/u.au)) * np.sin(inclination) * np.cos(angle_PA)*u.km/u.s
@@ -145,6 +109,11 @@ def generate_Vlsr( header, ra0, dec0, file_out='fits_files/test_Vc.fits',
         plt.imshow(Kep_velo.value, origin='lowest', cmap='RdYlBu_r', interpolation='none', extent=axes_extent)
         plt.contour(Kep_velo.value, c_levels=np.linspace(np.nanmin(Kep_velo.value),np.nanmax(Kep_velo.value),num=10), colors='k', extent=axes_extent)
         plt.title('Projected $V_{Kep}$')
-
-    return dep_radius, angle_PA, Kep_velo, lat_PA, lon_PA
-    # return dep_radius, angle_PA, Kep_velo
+    # Store results on class
+    results = result_container()
+    results.r = dep_radius
+    results.theta= angle_PA
+    results.v = Kep_velo
+    results.lat= lat_PA
+    results.lon= lon_PA
+    return results
