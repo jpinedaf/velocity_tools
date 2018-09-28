@@ -1,5 +1,6 @@
 # log file and CASA last files
 *.log
 *.last
+*.pyc
 #
 fits_files/

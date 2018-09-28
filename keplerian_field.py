@@ -5,32 +5,57 @@ import astropy.units as u
 from astropy import wcs
 from astropy.coordinates import SkyCoord, SkyOffsetFrame, FK5
 
-file_in='fits_files/test_file.fits'
-file_out='fits_files/test_Vc.fits'
-create_dummy_file=True
-save_Vfield=True
-do_plot=True
+def example_Vlsr(file_in='fits_files/test_file.fits'):
+    """ How to use this thing
+    """
+    # Central coordinate
+    ra0=15*(11+(33 + 25.321/60.)/60.)*u.deg
+    dec0=-1*(70+(11 + 41.209/60.)/60.)*u.deg
+    # ra0=15*(3+(30+ 25.6/60.)/60.)*u.deg
+    # dec0= (32+(10+ 25.6/60.)/60.)*u.deg
+    header=fits.getheader(file_in)
+    dep_radius, dep_angle, Kep_velo, dmaj, dmin = generate_Vlsr( header, ra0, dec0,
+        file_out='fits_files/test_Vc.fits', PA_Angle=0.*u.deg, #142.*u.deg,
+    # Inclination angle in Degrees
+    inclination=42.*u.deg,
+    # Distance in pc
+    distance=110.02*u.pc,
+    # Outer radius in au
+    R_out=300.*u.au,
+    # Stellar Mass in Solar Masses
+    Mstar = 2.2*u.Msun,
+    # V_lsr
+    Vc= 5.2*u.km/u.s, do_plot=False)
 
-#
-# Central coordinate
-ra0=15*(3+(30+ 25.6/60.)/60.)
-dec0= (32+(10+ 25.6/60.)/60.)
-# PA Angle in Degrees
-PA_Angle=142.*u.deg
-# Inclination angle in Degrees
-inclination=42.*u.deg
-# Distance in pc
-distance=110.02*u.pc
-# Outer radius in au
-R_out=300.*u.au
-# Stellar Mass in Solar Masses
-Mstar = 2.2*u.Msun
-#epsilon in au
-epsilon=10*u.au
-# V_lsr
-Vc= 5.2*u.km/u.s
+    plt.figure(figsize=(12,6))
+    plt.subplot(1, 3, 1)
+    plt.imshow(dep_radius.value, origin='lowest', interpolation='none')
+    plt.title('Deprojected radius, $r_{PA,i}$')
+    plt.subplot(1, 3, 2)
+    plt.imshow(dep_angle.value, origin='lowest', interpolation='none')
+    plt.title('Deprojected Angle, $theta$')
+    plt.subplot(1, 3, 3)
+    plt.imshow(Kep_velo.value, origin='lowest', cmap='RdYlBu_r', interpolation='none')
+    plt.title('Projected $V_{Kep}$')
 
-if create_dummy_file:
+    header2=header
+    header2['BUNIT']='km/s'
+    fits.writeto( 'fits_files/HD100546_Vc.fits', Kep_velo.value, header2, overwrite=True)
+
+    header2=header
+    header2['BUNIT']='au'
+    fits.writeto( 'fits_files/HD100546_Radius.fits', dep_radius.value, header2, overwrite=True)
+
+    header2=header
+    header2['BUNIT']='rad'
+    fits.writeto( 'fits_files/HD100546_theta.fits', dep_angle.value, header2, overwrite=True)
+
+def _generate_dummy_file():
+    """ 
+    """
+    file_in='fits_files/test_file.fits'
+    ra0=15*(3+(30+ 25.6/60.)/60.)
+    dec0= (32+(10+ 25.6/60.)/60.)
     # create dummy FITS file
     dx = 1500
     data= np.zeros( (2*dx+1,2*dx+1))
@@ -56,63 +81,70 @@ if create_dummy_file:
     hdu.header['BPA']=0.0
     hdu.writeto( file_in, overwrite=True)
 
+def generate_Vlsr( header, ra0, dec0, file_out='fits_files/test_Vc.fits', 
+    PA_Angle=142.*u.deg, inclination=42.*u.deg, distance=110.02*u.pc,
+    R_out=300.*u.au, Mstar = 2.2*u.Msun, Vc= 5.2*u.km/u.s, do_plot=False):
+    """
+    Main geometry: major axis in deprojected lon variable, while lat is the minor axis
 
-center = SkyCoord(ra0*u.deg, dec0*u.deg, frame='fk5')
-# Load WCS 
-header=fits.getheader(file_in)
-w = wcs.WCS(header)
-# Create xy array and then coordinates
-x=np.arange(header['naxis1'])
-y=np.arange(header['naxis2'])
-xx, yy = np.meshgrid(x, y)
-world = w.wcs_pix2world(xx.flatten(), yy.flatten(), 1)
-
-radec = SkyCoord(world[0]*u.deg, world[1]*u.deg, frame='fk5')
-radec_off = radec.transform_to(center.skyoffset_frame())
-
-lon=radec_off[:].lon
-lat=radec_off[:].lat
-lon.shape=xx.shape
-lat.shape=xx.shape
-# This plots the offset in x and y
-# This is all good now
-c, s = np.cos(PA_Angle), np.sin(PA_Angle)
-# Rotate the axes
-# lon_PA = c*lon - s*lat
-# lat_PA = s*lon + c*lat
-lat_PA = c*lat - s*lon
-lon_PA = s*lat + c*lon
-# Deprojection 
-lat_PA /= np.cos(inclination)
-dep_angle=np.sqrt( lat_PA**2 + lon_PA**2)
-angle_PA = np.arctan2(lat_PA, lon_PA)
-#
-dep_radius=np.clip( dep_angle.to('', equivalencies=u.dimensionless_angles())*distance.to(u.au), epsilon.to(u.au), None)
-Kep_velo = 29.78 * np.sqrt( Mstar/u.Msun / (dep_radius/u.au)) * np.sin(inclination) * np.cos(angle_PA)*u.km/u.s
-Kep_velo += Vc
-Kep_velo[dep_radius > R_out] = np.nan
-#
-if do_plot:
-    # Plot
-    axes_extent=[ (lon.to(u.arcsec).value).max(), (lon.to(u.arcsec).value).min(),
-                  (lat.to(u.arcsec).value).min(), (lat.to(u.arcsec).value).max()]
-    plt.ion()
-    plt.figure(figsize=(12,6))
-    plt.subplot(1, 2, 1)
-    plt.imshow(dep_radius.value, origin='lowest', interpolation='none', extent=axes_extent)
-    x0, y0= w.wcs_world2pix( center.ra, center.dec, 1)
-    dx_line= (lat.to(u.arcsec).value).max() * 0.2
-    plt.contour(dep_radius.value, c_levels=np.linspace(np.min(dep_radius.value),np.max(dep_radius.value),num=10), colors='k', extent=axes_extent)
-    plt.plot( [0.0, dx_line*np.sin(PA_Angle)],[0.0,dx_line*np.cos(PA_Angle)], color='gray')
-    plt.plot( [0.0, dx_line*np.sin(PA_Angle+90.*u.deg)],[0.0,dx_line*np.cos(PA_Angle+90.*u.deg)], color='red')
-    plt.title('Deprojected radius, $r_{PA,i}$')
+    """
     #
-    plt.subplot(1, 2, 2)
-    plt.imshow(Kep_velo.value, origin='lowest', cmap='RdYlBu_r', interpolation='none', extent=axes_extent)
-    plt.contour(Kep_velo.value, c_levels=np.linspace(np.nanmin(Kep_velo.value),np.nanmax(Kep_velo.value),num=10), colors='k', extent=axes_extent)
-    plt.title('Projected $V_{Kep}$')
+    center = SkyCoord(ra0, dec0, frame='fk5')
+    # Load WCS 
+    w = wcs.WCS(header)
+    # Create xy array and then coordinates
+    x=np.arange(header['naxis1'])
+    y=np.arange(header['naxis2'])
+    #
+    # epsilon will be determined as the pixel size
+    epsilon= (np.abs(header['cdelt1'])*u.deg).to('', equivalencies=u.dimensionless_angles())*distance.to(u.au)
+    xx, yy = np.meshgrid(x, y)
+    world = w.wcs_pix2world(xx.flatten(), yy.flatten(), 1)
 
-if save_Vfield:
-    header2=header
-    header2['BUNIT']='km/s'
-    fits.writeto( file_out, Kep_velo.value, header2)
+    radec = SkyCoord(world[0]*u.deg, world[1]*u.deg, frame='fk5')
+    radec_off = radec.transform_to(center.skyoffset_frame())
+    lon=radec_off[:].lon
+    lat=radec_off[:].lat
+    lon.shape=xx.shape
+    lat.shape=xx.shape
+    # This plots the offset in x and y
+    # This is all good now
+    c, s = np.cos(PA_Angle), np.sin(PA_Angle)
+    # Rotate the axes
+    # lon_PA = c*lon - s*lat
+    # lat_PA = s*lon + c*lat
+    lat_PA = c*lat - s*lon
+    lon_PA = s*lat + c*lon
+    # Deprojection 
+    lat_PA /= np.cos(inclination)
+    # lon_PA /= np.cos(inclination)
+    dep_angle=np.sqrt( lat_PA**2 + lon_PA**2)
+    angle_PA = np.arctan2(lat_PA, lon_PA)
+    #
+    dep_radius=np.clip( dep_angle.to('', equivalencies=u.dimensionless_angles())*distance.to(u.au), epsilon.to(u.au), None)
+    Kep_velo = 29.78 * np.sqrt( Mstar/u.Msun / (dep_radius/u.au)) * np.sin(inclination) * np.cos(angle_PA)*u.km/u.s
+    Kep_velo += Vc
+    Kep_velo[dep_radius > R_out] = np.nan
+    #
+    if do_plot:
+        # Plot
+        axes_extent=[ (lon.to(u.arcsec).value).max(), (lon.to(u.arcsec).value).min(),
+                      (lat.to(u.arcsec).value).min(), (lat.to(u.arcsec).value).max()]
+        plt.ion()
+        plt.figure(figsize=(12,6))
+        plt.subplot(1, 2, 1)
+        plt.imshow(dep_radius.value, origin='lowest', interpolation='none', extent=axes_extent)
+        x0, y0= w.wcs_world2pix( center.ra, center.dec, 1)
+        dx_line= (lat.to(u.arcsec).value).max() * 0.2
+        plt.contour(dep_radius.value, c_levels=np.linspace(np.min(dep_radius.value),np.max(dep_radius.value),num=10), colors='k', extent=axes_extent)
+        plt.plot( [0.0, dx_line*np.sin(PA_Angle)],[0.0,dx_line*np.cos(PA_Angle)], color='gray')
+        plt.plot( [0.0, dx_line*np.sin(PA_Angle+90.*u.deg)],[0.0,dx_line*np.cos(PA_Angle+90.*u.deg)], color='red')
+        plt.title('Deprojected radius, $r_{PA,i}$')
+        #
+        plt.subplot(1, 2, 2)
+        plt.imshow(Kep_velo.value, origin='lowest', cmap='RdYlBu_r', interpolation='none', extent=axes_extent)
+        plt.contour(Kep_velo.value, c_levels=np.linspace(np.nanmin(Kep_velo.value),np.nanmax(Kep_velo.value),num=10), colors='k', extent=axes_extent)
+        plt.title('Projected $V_{Kep}$')
+
+    return dep_radius, angle_PA, Kep_velo, lat_PA, lon_PA
+    # return dep_radius, angle_PA, Kep_velo
