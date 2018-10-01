@@ -2,6 +2,7 @@ import keplerian_field
 import matplotlib.pyplot as plt
 import astropy.units as u
 from astropy.io import fits
+import numpy as np
 
 def example_Vlsr(file_in='fits_files/test_file.fits'):
     """ How to use this thing
@@ -16,17 +17,18 @@ def example_Vlsr(file_in='fits_files/test_file.fits'):
     # results=generate_Vlsr( header, ra0, dec0,
     #     file_out='fits_files/test_Vc.fits', PA_Angle=90.*u.deg, #142.*u.deg,
     results=keplerian_field.generate_Vlsr( header, ra0, dec0,    
-        file_out='fits_files/test_Vc.fits', PA_Angle=142.*u.deg,
+        file_out='fits_files/test_Vc.fits', PA_Angle=(142.+180)*u.deg,
         # Inclination angle in Degrees
         inclination=42.*u.deg,
         # Distance in pc
         distance=110.02*u.pc,
         # Outer radius in au
-        R_out=300.*u.au,
+        R_out=3.2*110.02*u.au,   #R_out=300.*u.au,
         # Stellar Mass in Solar Masses
         Mstar = 2.2*u.Msun,
         # V_lsr
-        Vc= 5.2*u.km/u.s, do_plot=False)
+        Vc= 5.64*u.km/u.s, do_plot=False)
+        # Vc= 5.2*u.km/u.s, do_plot=False)
 
     plt.figure(figsize=(12,6))
     plt.subplot(1, 3, 1)
@@ -62,5 +64,30 @@ def example_Vlsr(file_in='fits_files/test_file.fits'):
     header2['BUNIT']='au'
     fits.writeto( 'fits_files/HD100546_lon.fits', results.lon.value, header2, overwrite=True)
 
-from spectral_cube import SpectralCube
-cube = SpectralCube.read('adv.fits')
+if False:
+    # Load data and convert cube into spectral axis of km/s
+    example_Vlsr(file_in='fits_files/HD100546_masked_Vc.fits')
+    from spectral_cube import SpectralCube
+    cube = SpectralCube.read('fits_files/HD100546_12CO_mscale_cube_3D.fits')
+    cube2=cube.with_spectral_unit(u.km/u.s, velocity_convention='radio')
+    vaxis=cube2.spectral_axis
+    # Load keplerian velocity model and give proper units
+    vkep=fits.getdata('fits_files/HD100546_Vc.fits')*u.km/u.s
+    vmask=np.zeros( cube2.shape)
+    v_width=(1.0*u.km/u.s)
+    for ii in np.arange(0,vaxis.size):
+        mask_i=np.abs(vkep-vaxis[ii])<v_width
+        vmask[ii,:,:]=mask_i
+    header_v=fits.getheader('fits_files/HD100546_12CO_mscale_cube_3D.fits')
+    file_mask_out='fits_files/test_mask_1kms.fits'
+    fits.writeto(file_mask_out,vmask.astype(np.float), header_v, overwrite=True)
+
+    my_mask=fits.getdata(file_mask_out)
+    cube2_mask = cube2.with_mask(my_mask)
+    m0 = cube2_mask.moment(order=0)
+    m1 = cube2_mask.moment(order=1)
+    m0.write('fits_files/test_mom0_masked.fits')
+    m1.write('fits_files/test_mom1_masked.fits')
+        # try:
+        #     vmask[mask_i]=1
+        # except:
