@@ -29,7 +29,7 @@ def example_Vlsr(file_in='fits_files/test_file.fits'):
         # V_lsr
         Vc= 5.64*u.km/u.s, do_plot=False)
         # Vc= 5.2*u.km/u.s, do_plot=False)
-
+    conv_Vlsr = keplerian_field.convolve_Vlsr( results.v, header)
     plt.figure(figsize=(12,6))
     plt.subplot(1, 3, 1)
     plt.imshow(results.r.value, origin='lowest', interpolation='none')
@@ -38,12 +38,16 @@ def example_Vlsr(file_in='fits_files/test_file.fits'):
     plt.imshow(results.theta.value, origin='lowest', interpolation='none')
     plt.title('Deprojected Angle, $theta$')
     plt.subplot(1, 3, 3)
-    plt.imshow(results.v.value, origin='lowest', cmap='RdYlBu_r', interpolation='none')
+    # plt.imshow(results.v.value, origin='lowest', cmap='RdYlBu_r', interpolation='none')
+    plt.imshow(conv_Vlsr, origin='lowest', cmap='RdYlBu_r', interpolation='none')
     plt.title('Projected $V_{Kep}$')
 
     header2=header
     header2['BUNIT']='km/s'
     fits.writeto( 'fits_files/HD100546_Vc.fits', results.v.value, header2, overwrite=True)
+    header2=header
+    header2['BUNIT']='km/s'
+    fits.writeto( 'fits_files/HD100546_Vc_conv.fits', conv_Vlsr, header2, overwrite=True)
 
     header2=header
     header2['BUNIT']='au'
@@ -72,7 +76,7 @@ if False:
     cube2=cube.with_spectral_unit(u.km/u.s, velocity_convention='radio')
     vaxis=cube2.spectral_axis
     # Load keplerian velocity model and give proper units
-    vkep=fits.getdata('fits_files/HD100546_Vc.fits')*u.km/u.s
+    vkep=fits.getdata('fits_files/HD100546_Vc_conv.fits')*u.km/u.s
     vmask=np.zeros( cube2.shape)
     v_width=(1.0*u.km/u.s)
     for ii in np.arange(0,vaxis.size):
@@ -82,12 +86,30 @@ if False:
     file_mask_out='fits_files/test_mask_1kms.fits'
     fits.writeto(file_mask_out,vmask.astype(np.float), header_v, overwrite=True)
 
+    vmask2=np.zeros( cube2.shape)
+    v_width2=(2.0*u.km/u.s)
+    for ii in np.arange(0,vaxis.size):
+        mask_i2=np.abs(vkep-vaxis[ii])<v_width2
+        vmask2[ii,:,:]=mask_i2
+    header_v=fits.getheader('fits_files/HD100546_12CO_mscale_cube_3D.fits')
+    file_mask_out='fits_files/test_mask_2kms.fits'
+    fits.writeto(file_mask_out,vmask2.astype(np.float), header_v, overwrite=True)
+
+    file_mask_out='fits_files/test_mask_1kms.fits'
     my_mask=fits.getdata(file_mask_out)
-    cube2_mask = cube2.with_mask(my_mask)
+    cube2_mask = cube2.with_mask(my_mask.astype(np.bool))
     m0 = cube2_mask.moment(order=0)
     m1 = cube2_mask.moment(order=1)
-    m0.write('fits_files/test_mom0_masked.fits')
-    m1.write('fits_files/test_mom1_masked.fits')
+    m0.write('fits_files/test_mom0_masked_1kms.fits')
+    m1.write('fits_files/test_mom1_masked_1kms.fits')
+
+    file_mask_out='fits_files/test_mask_2kms.fits'
+    my_mask=fits.getdata(file_mask_out)
+    cube2_mask = cube2.with_mask(my_mask.astype(np.bool))
+    m0 = cube2_mask.moment(order=0)
+    m1 = cube2_mask.moment(order=1)
+    m0.write('fits_files/test_mom0_masked_2kms.fits')
+    m1.write('fits_files/test_mom1_masked_2kms.fits')
         # try:
         #     vmask[mask_i]=1
         # except:

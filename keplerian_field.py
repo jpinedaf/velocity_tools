@@ -4,11 +4,25 @@ import matplotlib.pyplot as plt
 import astropy.units as u
 from astropy import wcs
 from astropy.coordinates import SkyCoord, SkyOffsetFrame
+from radio_beam import Beam
+from astropy.convolution import convolve
 
 class result_container:
     """ Function to create class container
     """
     pass
+
+def convolve_Vlsr(V_lsr, header):
+    """ Convolve Vlsr map with beam in header
+    """
+    pixscale=np.abs(header['cdelt1'])
+    if header['cunit1'] == 'arcsec':
+        pixscale *= u.arcsec
+    else:
+        pixscale *= u.deg
+    my_beam = Beam.from_fits_header(header)
+    my_beam_kernel = my_beam.as_kernel(pixscale)
+    return convolve(V_lsr, my_beam_kernel, boundary='fill', fill_value=np.nan)
 
 def _generate_dummy_file():
     """ 
