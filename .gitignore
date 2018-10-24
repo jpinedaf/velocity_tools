@@ -4,3 +4,4 @@
 *.pyc
 #
 fits_files/
+*.egg-info
