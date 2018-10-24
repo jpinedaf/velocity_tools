@@ -3,7 +3,7 @@ from astropy.io import fits
 import matplotlib.pyplot as plt
 import astropy.units as u
 from astropy import wcs
-from astropy.coordinates import SkyCoord, SkyOffsetFrame
+from astropy.coordinates import SkyCoord
 from radio_beam import Beam
 from astropy.convolution import convolve
 
@@ -73,7 +73,7 @@ def generate_Vlsr( header, ra0, dec0, file_out='fits_files/test_Vc.fits',
     # epsilon will be determined as the pixel size
     epsilon= (np.abs(header['cdelt1'])*u.deg).to('', equivalencies=u.dimensionless_angles())*distance.to(u.au)
     xx, yy = np.meshgrid(x, y)
-    world = w.wcs_pix2world(xx.flatten(), yy.flatten(), 1)
+    world = w.wcs_pix2world(xx.flatten(), yy.flatten(), 0)
 
     radec = SkyCoord(world[0]*u.deg, world[1]*u.deg, frame='fk5')
     radec_off = radec.transform_to(center.skyoffset_frame())

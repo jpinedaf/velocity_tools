@@ -4,18 +4,15 @@ import astropy.units as u
 from astropy.io import fits
 import numpy as np
 
+#ra1 = ra0=15*(11+(33 + 25.318652/60.)/60.)*u.deg
+#dec1=-1*(70+(11 + 41.23173/60.)/60.)*u.deg
 def example_Vlsr(file_in='fits_files/test_file.fits'):
     """ How to use this thing
     """
     # Central coordinate
     ra0=15*(11+(33 + 25.321/60.)/60.)*u.deg
     dec0=-1*(70+(11 + 41.209/60.)/60.)*u.deg
-    # ra0=15*(3+(30+ 25.6/60.)/60.)*u.deg
-    # dec0= (32+(10+ 25.6/60.)/60.)*u.deg
     header=fits.getheader(file_in)
-    # dep_radius, dep_angle, Kep_velo, dmaj, dmin = 
-    # results=generate_Vlsr( header, ra0, dec0,
-    #     file_out='fits_files/test_Vc.fits', PA_Angle=90.*u.deg, #142.*u.deg,
     results=keplerian_field.generate_Vlsr( header, ra0, dec0,    
         file_out='fits_files/test_Vc.fits', PA_Angle=(142.+180)*u.deg,
         # Inclination angle in Degrees
