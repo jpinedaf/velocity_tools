@@ -11,8 +11,19 @@ class result_container:
 
 def convolve_Vlsr(V_lsr, header):
     """ 
-    Convolve pure theoretical Vlsr map with beam in header
-    This would mimick (first order) the effect of beam size in the observations
+    It Convolves a pure theoretical Vlsr map with a requested beam.
+    The beam is setup using the FITS header of the expected observation.
+    The convolution would mimick (at least at first order) the effect of a 
+    finite beam size in the observations.
+    The header is also used to convert the beam into pixel units before 
+    convolving the map
+
+    param :
+    Vlsr : image with Velocity map to be convolved. It handles astropy.units.
+    header : FITS header with beam and pixel size information
+
+    TODO:
+    -pass a Beam structure instead of the FITS header, to make it more flexible
     """
     from astropy.convolution import convolve
     from radio_beam import Beam
@@ -91,3 +102,178 @@ def generate_offsets( header, ra0, dec0,
     results.lat= lat_PA
     results.lon= lon_PA
     return results
+
+def mask_velocity(cube, Vmap, v_width=1.0*u.km/u.s):
+    """
+    cube : SpectralCube cube 
+    Vmap : Centroid vekocity map in velocity units.
+    
+    """
+    cube2=cube.with_spectral_unit(u.km/u.s, velocity_convention='radio')
+    vaxis=cube2.spectral_axis
+    # Load keplerian velocity model and give proper units
+    vmask=np.zeros( cube2.shape)
+    for ii in np.arange(0,vaxis.size):
+        mask_i=np.abs(Vmap-vaxis[ii])<v_width
+        vmask[ii,:,:]=mask_i
+    # header_v=fits.getheader('fits_files/HD100546_12CO_mscale_cube_3D.fits')
+    # file_mask_out='fits_files/test_mask_1kms.fits'
+    # fits.writeto(file_mask_out,vmask.astype(np.float), header_v, overwrite=True)
+    return vmask.astype(np.float)
+
+
+def vfit_grad( X, Y, V, V_err, nmin=7):
+    """
+    Function to fit a single gradient to a velocity field.
+    It assumes solid body rotation, and it uses the velocity uncertainty.
+
+    X : Off-Set. With appropriate units (e.g. deg)
+    Y : Off-Set. With appropriate units (e.g. deg)
+    V : Radial velocity. With appropriate units (e.g. km/s)
+    V_err : Uncertainty in radial velocity. With appropriate units (e.g. km/s)
+
+    param :
+    nmin : Minimum number of pixels required to carry out the fit. Default is 7, 
+    which is appropriate for single dish data that is Nyquist sampled
+
+    OUTPUTS:
+    Vc:       Mean centroid velocity in km/s
+    Vc_err:   Uncertainty of the mean centroid velocity in km/s
+    Grad:     Velocity gradient in km/s/pc
+    Grad_Err: Uncertainty associated to the velocity gradient (km/s/pc)
+    PosAng:   Position angle of the fitted gradient, in degrees
+    PAErr:    Uncertainty of the position angle (degrees)
+    ChiSq:    Chi^2
+    """
+
+    # Xold = copy(X)
+    # Yold = copy(Y)
+    npts = X.shape
+    
+    if npts < nmin:
+        results = result_container()
+        results.Grad = np.nan
+        results.Grad_err = np.nan
+        results.GradPA = np.nan
+        results.GradPA_err = np.nan
+        results.Vc = np.nan
+        results.Vc_err = np.nan
+        return results #
+    wt = 1/(V_err**2)
+# Obtain total weight, and average (x,y,v) to create new variables (dx,dy,dv)
+# which provide a lower uncertainty in the fit.
+#
+    sumWt  = np.sum(wt)
+    x_mean=np.sum(X*wt)/sumWt
+    y_mean=np.sum(Y*wt)/sumWt
+    v_mean=np.sum(V*wt)/sumWt
+    dx = (X-x_mean)#[mask]  # remove mean value from inputs 
+    dy = (Y-y_mean)#[mask]  # to reduce fit uncertainties
+    dv = (V-v_mean)#[mask]  #
+    M = [[np.sum(wt),   np.sum(dx*wt),    np.sum(dy*wt)], 
+        [np.sum(dx*wt), np.sum(dx**2*wt), np.sum(dx*dy*wt)], 
+        [np.sum(dy*wt), np.sum(dx*dy*wt), np.sum(dy**2*wt)]]
+  #print M
+    from scipy import linalg
+    try:
+        covar = linalg.inv(M)
+    except IOError:
+        import sys
+        sys.exit('Singular matrix: no solution returned')
+    coeffs = np.dot(covar,[[np.sum(dv*wt)], [np.sum(dx*dv*wt)],[np.sum(dy*dv*wt)]])
+    #
+    errx= np.sqrt(covar[1, 1])
+    erry= np.sqrt(covar[2, 2])
+    #
+    gx = coeffs[1][0]
+    gy = coeffs[2][0]
+    #
+    vc = coeffs[0]+v_mean
+    vp = coeffs[0]+coeffs[1]*dx+coeffs[2]*dy
+    grad     = np.sqrt(coeffs[1]**2+coeffs[2]**2)
+    posang   = np.arctan2(gy, -gx)*180/pi
+    #print -gx,gy,posang
+    red_chisq = np.sum( (dv-vp)**2*wt)/(np.len(dv)-3.)
+
+    vc_err   = 0.
+    grad_err = np.sqrt((gx*errx)**2+(gy*erry)**2)/grad
+    #print 'grad_err1', grad_err
+    grad_err = np.sqrt((gx*errx)**2+(gy*erry)**2+2*gx*gy*covar[2,1])/grad
+    #print 'grad_err2', grad_err
+    paerr    = 180/pi*sqrt((gx/(gx**2+gy**2))**2*erry**2+
+                         (gy/(gx**2+gy**2))**2*errx**2)
+    #print 'paerr1',paerr
+    paerr    = 180/pi*sqrt((gx/(gx**2+gy**2))**2*erry**2+
+                         (gy/(gx**2+gy**2))**2*errx**2-2*gx*gy/(gx**2+gy**2)**2*covar[2,1])
+    #print 'paerr2',paerr
+    chisq    = red_chisq
+    vp += v_mean
+    # Restore X and Y
+    # X=copy(Xold)
+    # Y=copy(Yold)
+    results = result_container()
+    results.Grad = grad
+    results.Grad_err = grad_err
+    results.GradPA = posang
+    results.GradPA_err = paerr
+    results.Vc = vc
+    results.Vc_err = vc_err
+    return results #
+    #grad[0],grad_err[0],posang,paerr,chisq,vc,vc_err
+
+
+def average_profile( x, y, dx, dy=None, log=False, oversample=1.):
+    """ 
+    Averaging function to create a radial profile.
+
+    It returns the average of y in the range [x, x+dx], where the bin size are 
+    constant in linear space. 
+    If log=True, then the bin sizes are constant in log space, and the average is 
+    calculated in the range [log(x), log(x)+dx].
+
+    oversample = 1. 
+            This is the number to correct for the correlated number of pixesl within a beam. 
+            Default is 1.
+            Normal usage should be (beamsize/pixelsize)**2
+    
+    returns: xbin, ybin, dxbin, dybin
+    xbin : the middle of the bin
+    ybin : the mean of the y values in the given bin
+    dxbin : the width of the bin
+    dybin : the uncertainty on the mean value calculation. This is the standard deviation of the points.
+
+    """
+    if log == False:
+        # Linear space
+        xx=x
+    else:
+        # log space
+        xx=np.log(x)
+
+    xmin=np.min(xx)
+    xmax=np.max(xx)
+    n_bin=int(np.ceil((xmax-xmin)/dx))
+    xbin=np.zeros(n_bin)
+    dxbin=np.zeros(n_bin)
+    ybin=np.zeros(n_bin)
+    dybin=np.zeros(n_bin)
+    for i in range(n_bin):
+        idx=np.where( (xx>xmin+dx*i) & (xx<xmin+dx*(i+1)))
+        # xbin[i] =np.mean(xx[idx])
+        xbin[i] = xmin+dx*(i+0.5)
+        # ybin[i] =np.mean(y[idx])
+        if dy is None:
+            ybin[i] =np.average(y[idx])
+            print('using {0} points in bin {1}'.format(idx[0].size, xbin[i]))
+            print('Initial value of standard deviation is {0}\nupdated value using number of elements is {1}'.format( np.std(y[idx]), np.std(y[idx])/np.sqrt(y[idx].size)))
+            dybin[i]=np.std(y[idx])/np.sqrt(y[idx].size /oversample)
+        else:
+            ybin[i] =np.average(y[idx], weights=1./dy[idx]**2)
+            dybin[i]=1./np.sqrt(np.sum(1./dy[idx]**2))
+        # dxbin[i]=np.std(xx[idx])
+        dxbin[i] = dx*0.5
+        # dybin[i]=np.std(y[idx])
+    if log == False:
+        return xbin, ybin, dxbin, dybin
+    else:
+        return np.exp(xbin), ybin, dxbin, dybin
