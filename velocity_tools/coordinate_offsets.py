@@ -173,7 +173,7 @@ def vfit_grad( X, Y, V, V_err, nmin=7):
     M = [[np.sum(wt),   np.sum(dx*wt),    np.sum(dy*wt)], 
         [np.sum(dx*wt), np.sum(dx**2*wt), np.sum(dx*dy*wt)], 
         [np.sum(dy*wt), np.sum(dx*dy*wt), np.sum(dy**2*wt)]]
-  #print M
+    #
     from scipy import linalg
     try:
         covar = linalg.inv(M)
@@ -192,25 +192,19 @@ def vfit_grad( X, Y, V, V_err, nmin=7):
     vp = coeffs[0]+coeffs[1]*dx+coeffs[2]*dy
     grad     = np.sqrt(coeffs[1]**2+coeffs[2]**2)
     posang   = np.arctan2(gy, -gx)*180/pi
-    #print -gx,gy,posang
+    #
     red_chisq = np.sum( (dv-vp)**2*wt)/(np.len(dv)-3.)
 
     vc_err   = 0.
     grad_err = np.sqrt((gx*errx)**2+(gy*erry)**2)/grad
-    #print 'grad_err1', grad_err
     grad_err = np.sqrt((gx*errx)**2+(gy*erry)**2+2*gx*gy*covar[2,1])/grad
-    #print 'grad_err2', grad_err
     paerr    = 180/pi*sqrt((gx/(gx**2+gy**2))**2*erry**2+
                          (gy/(gx**2+gy**2))**2*errx**2)
-    #print 'paerr1',paerr
     paerr    = 180/pi*sqrt((gx/(gx**2+gy**2))**2*erry**2+
                          (gy/(gx**2+gy**2))**2*errx**2-2*gx*gy/(gx**2+gy**2)**2*covar[2,1])
-    #print 'paerr2',paerr
     chisq    = red_chisq
     vp += v_mean
-    # Restore X and Y
-    # X=copy(Xold)
-    # Y=copy(Yold)
+    #
     results = result_container()
     results.Grad = grad
     results.Grad_err = grad_err
@@ -218,9 +212,7 @@ def vfit_grad( X, Y, V, V_err, nmin=7):
     results.GradPA_err = paerr
     results.Vc = vc
     results.Vc_err = vc_err
-    return results #
-    #grad[0],grad_err[0],posang,paerr,chisq,vc,vc_err
-
+    return results
 
 def average_profile( x, y, dx, dy=None, log=False, oversample=1.):
     """ 
@@ -259,20 +251,15 @@ def average_profile( x, y, dx, dy=None, log=False, oversample=1.):
     dybin=np.zeros(n_bin)
     for i in range(n_bin):
         idx=np.where( (xx>xmin+dx*i) & (xx<xmin+dx*(i+1)))
-        # xbin[i] =np.mean(xx[idx])
         xbin[i] = xmin+dx*(i+0.5)
-        # ybin[i] =np.mean(y[idx])
+        #
         if dy is None:
             ybin[i] =np.average(y[idx])
-            print('using {0} points in bin {1}'.format(idx[0].size, xbin[i]))
-            print('Initial value of standard deviation is {0}\nupdated value using number of elements is {1}'.format( np.std(y[idx]), np.std(y[idx])/np.sqrt(y[idx].size)))
             dybin[i]=np.std(y[idx])/np.sqrt(y[idx].size /oversample)
         else:
             ybin[i] =np.average(y[idx], weights=1./dy[idx]**2)
             dybin[i]=1./np.sqrt(np.sum(1./dy[idx]**2))
-        # dxbin[i]=np.std(xx[idx])
         dxbin[i] = dx*0.5
-        # dybin[i]=np.std(y[idx])
     if log == False:
         return xbin, ybin, dxbin, dybin
     else:
