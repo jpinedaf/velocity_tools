@@ -28,24 +28,34 @@ def v_theta(r, theta, M=0.5*u.Msun, theta0=30*u.deg):
             (np.cos(theta0) * np.sin(theta)**2))
     return v_M( r, M=0.5*u.Msun) * geom
 
+def R_cent(M=0.5*u.Msun, Omega=1e-14/u.s, r0=1e4*u.au):
+    return (r0**4 * Omega**2/ (G*M)).to(u.au)
+
 def get_theta(theta, r_to_Rc=0.1, theta0=np.radians(30)):
-    geom = (1 - np.cos(theta) / np.cos(theta0))
-    return r_to_Rc * geom - np.sin(theta0)**2
+    geom = np.sin(theta0)**2 / (1 - (np.cos(theta) / np.cos(theta0)))
+    return r_to_Rc - geom
+
+def dphi(theta, theta0=np.radians(30)):
+    """
+    Gets the difference in Phi.
+    theta abd theta0 are in radians
+    """
+    return np.arctan( np.tan(np.arccos(np.cos(theta) / np.cos(theta0))) / np.sin(theta0))
 
 def stream_line(r, M=0.5*u.Msun, theta0=30*u.deg, 
     Omega=1e-14/u.s, r0=1e4*u.au):
     # convert theta0 into radians
     rad_theta0 = theta0.to(u.rad).value
-    Rc = (r0**4 * Omega**2/ (G*M)).to(u.au)
+    Rc = R_cent(M=M, Omega=Omega, r0=r0)
     theta = np.zeros_like(r.value) + np.nan
-    theta_i = rad_theta0
-    print( (r0/Rc).decompose())
+    # Initial guess at largest radius is tetha0 + epsilon for numerical reasons
+    theta_i = rad_theta0 + 1e-3
     for ind in np.arange(len(r)):
         r_i = (r[ind] / Rc).decompose().value
         result = optimize.root( get_theta, theta_i, args=(r_i, rad_theta0))
         theta_i = result.x
         theta[ind] = theta_i
-        print('r_to_Rc={0}   theta0={1}  and sol={2}'.format(r_i, rad_theta0, theta[ind]))
+        # print('r_to_Rc={0}   theta0={1}  and sol={2}'.format(r_i, rad_theta0, theta[ind]))
     bad = (r < Rc)
     theta[bad] = np.nan
     return theta * u.rad
