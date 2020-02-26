@@ -59,3 +59,22 @@ def stream_line(r, M=0.5*u.Msun, theta0=30*u.deg,
     bad = (r < Rc)
     theta[bad] = np.nan
     return theta * u.rad
+
+def rotate_xyz(x, y, z, inc=30*u.deg, PA=30*u.deg):
+    """
+    Rotate on inclination and PA
+    x-axis and y-axis are on the plane on the sky,
+    z-axis is the 
+
+    Rotation around x is inclination angle
+    Rotation around z is PA angle
+    """
+    xyz = np.(xxx)
+    Rot_inc = np.array([[1, 0, 0],
+                       [0, np.cos(inc), np.sin(inc)],
+                       [0, -np.sin(inc), np.cos(inc)]])
+    Rot_PA = np.array([[np.cos(inc), np.sin(inc), 0],
+                       [-np.sin(inc), np.cos(inc), 0],
+                       [0, 0, 1]])
+    xyz_new = 
+    return x_new, y_new, z_new
