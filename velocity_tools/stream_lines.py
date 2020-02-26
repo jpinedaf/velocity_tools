@@ -69,12 +69,12 @@ def rotate_xyz(x, y, z, inc=30*u.deg, PA=30*u.deg):
     Rotation around x is inclination angle
     Rotation around z is PA angle
     """
-    xyz = np.(xxx)
+    xyz = np.column_stack((x, y, z))
     Rot_inc = np.array([[1, 0, 0],
                        [0, np.cos(inc), np.sin(inc)],
                        [0, -np.sin(inc), np.cos(inc)]])
-    Rot_PA = np.array([[np.cos(inc), np.sin(inc), 0],
-                       [-np.sin(inc), np.cos(inc), 0],
+    Rot_PA = np.array([[np.cos(-PA), np.sin(-PA), 0],
+                       [-np.sin(-PA), np.cos(-PA), 0],
                        [0, 0, 1]])
-    xyz_new = 
-    return x_new, y_new, z_new
+    xyz_new = Rot_PA.dot(Rot_inc.dot(xyz.T))
+    return xyz_new[0], xyz_new[1], xyz_new[2]
