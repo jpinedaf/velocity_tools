@@ -67,14 +67,17 @@ def rotate_xyz(x, y, z, inc=30*u.deg, PA=30*u.deg):
     z-axis is the 
 
     Rotation around x is inclination angle
-    Rotation around z is PA angle
+    Rotation around y is PA angle
+
+    Using example matrices as decribed in:
+    https://en.wikipedia.org/wiki/3D_projection
     """
     xyz = np.column_stack((x, y, z))
     Rot_inc = np.array([[1, 0, 0],
                        [0, np.cos(inc), np.sin(inc)],
                        [0, -np.sin(inc), np.cos(inc)]])
-    Rot_PA = np.array([[np.cos(-PA), np.sin(-PA), 0],
-                       [-np.sin(-PA), np.cos(-PA), 0],
-                       [0, 0, 1]])
+    Rot_PA = np.array([[np.cos(PA), 0, -np.sin(PA)],
+                       [0, 1, 0],
+                       [np.sin(PA), 0, np.cos(PA)]])
     xyz_new = Rot_PA.dot(Rot_inc.dot(xyz.T))
     return xyz_new[0], xyz_new[1], xyz_new[2]
