@@ -35,7 +35,7 @@ def get_theta(theta, r_to_Rc=0.1, theta0=np.radians(30)):
     geom = np.sin(theta0)**2 / (1 - (np.cos(theta) / np.cos(theta0)))
     return r_to_Rc - geom
 
-def dphi(theta, theta0=np.radians(30)):
+def get_dphi(theta, theta0=np.radians(30)):
     """
     Gets the difference in Phi.
     theta abd theta0 are in radians
@@ -81,3 +81,22 @@ def rotate_xyz(x, y, z, inc=30*u.deg, PA=30*u.deg):
                        [np.sin(PA), 0, np.cos(PA)]])
     xyz_new = Rot_PA.dot(Rot_inc.dot(xyz.T))
     return xyz_new[0], xyz_new[1], xyz_new[2]
+
+def xyz_stream(M=0.5*u.Msun, theta0=30*u.deg, phi0=15*u.deg,
+    Omega=1e-14/u.s, r0=1e4*u.au, inc=0*u.deg, PA=0*u.deg):
+    """
+    it gets xyz coordinates for a stream line and it is also rotated 
+    in PA and inclination along the line of sight.
+    This is a wrapper around stream_line() and rotate_xyz()
+    """
+    Rc = R_cent(M=M, Omega=Omega, r0=r0)
+    r = np.arange(r0.value, Rc.value, step=-10) * u.au
+    angles = np.linspace(0, 2 * np.pi, 100)
+    theta = stream_line(r, M=M, theta0=theta0,
+        Omega=Omega, r0=r0)
+    dphi = get_dphi(theta, theta0=theta0)
+    # Convert from spherical into cartesian coordinates
+    z = r * np.cos(theta)
+    y = r * np.sin(theta) * np.sin(phi0 + dphi)
+    x = r * np.cos(theta) * np.cos(phi0 + dphi)
+    return rotate_xyz(x, y, z, inc=inc, PA=PA)
