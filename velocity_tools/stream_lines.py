@@ -82,6 +82,7 @@ def rotate_xyz(x, y, z, inc=30*u.deg, PA=30*u.deg):
     xyz_new = Rot_PA.dot(Rot_inc.dot(xyz.T))
     return xyz_new[0], xyz_new[1], xyz_new[2]
 
+
 def xyz_stream(M=0.5*u.Msun, theta0=30*u.deg, phi0=15*u.deg,
     Omega=1e-14/u.s, r0=1e4*u.au, inc=0*u.deg, PA=0*u.deg):
     """
@@ -90,7 +91,7 @@ def xyz_stream(M=0.5*u.Msun, theta0=30*u.deg, phi0=15*u.deg,
     This is a wrapper around stream_line() and rotate_xyz()
     """
     Rc = R_cent(M=M, Omega=Omega, r0=r0)
-    r = np.arange(r0.value, Rc.value, step=-10) * u.au
+    r = np.arange(r0.to(u.au).value, Rc.to(u.au).value * 0.99999, step=-10)* u.au
     angles = np.linspace(0, 2 * np.pi, 100)
     theta = stream_line(r, M=M, theta0=theta0,
         Omega=Omega, r0=r0)
