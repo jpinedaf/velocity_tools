@@ -58,7 +58,7 @@ def r_cent(mass=0.5 * u.Msun, omega=1e-14 / u.s, r0=1e4 * u.au):
     return (r0 ** 4 * omega ** 2 / (G * mass)).to(u.au)
 
 
-def theta_root(theta, r_to_rc=0.1, theta0=np.radians(30), ecc=1.,
+def theta_abs(theta, r_to_rc=0.1, theta0=np.radians(30), ecc=1.,
               orb_ang=90*u.deg):
     """
     function to determine theta numerically by finding the root of a function
@@ -72,9 +72,13 @@ def theta_root(theta, r_to_rc=0.1, theta0=np.radians(30), ecc=1.,
     :return: returns the difference between the radius and the predicted one,
            a value of 0 corresponds to a proper streamline
     """
-    xi = np.arccos(np.cos(theta) / np.cos(theta0)) + orb_ang
+    cos_ratio = np.cos(theta) / np.cos(theta0)
+    if cos_ratio > 1.:
+        # print('theta0={0}, theta_try={1} --> bad arccos calculation'.format(theta0, theta))
+        return np.nan
+    xi = np.arccos(cos_ratio) + orb_ang.to(u.rad).value
     geom = np.sin(theta0)**2 / (1 - ecc * np.cos(xi))
-    return r_to_rc - geom
+    return np.abs(r_to_rc - geom)
 
 
 def get_dphi(theta, theta0=np.radians(30)):
@@ -108,19 +112,29 @@ def stream_line(r, mass=0.5 * u.Msun, r0=1e4 * u.au, theta0=30 * u.deg,
     # convert theta0 into radians
     rad_theta0 = theta0.to(u.rad).value
     rc = r_cent(mass=mass, omega=omega, r0=r0)
+    print("rc={0}".format(rc))
     theta = np.zeros_like(r.value) + np.nan
-    # Initial guess at largest radius is tetha0 + epsilon for numerical reasons
-    theta_i = rad_theta0 + 1e-3
     # mu and nu are dimensionless
     mu = (rc / r0).decompose().value
     nu = (v_r0 * np.sqrt(rc / (G * mass))).decompose().value
     epsilon = nu**2 + mu**2 * np.sin(theta0)**2 - 2 * mu
     ecc = np.sqrt(1 + epsilon * np.sin(theta0)**2)
     orb_ang = np.arccos((1 - mu * np.sin(theta0)**2) / ecc)
-    for ind in np.arange(len(r)):
+    # the first element in the streamline is the starting point
+    theta[0] = rad_theta0
+    # Initial guess at largest radius is theta0 +- epsilon towards the midplane
+    if rad_theta0 < np.radians(90):
+        theta_i = rad_theta0 + 1e-7
+        theta_bracket = [(rad_theta0, np.pi/2.)]
+    else:
+        theta_i = rad_theta0 - 1e-7
+        theta_bracket = [(np.pi/2., rad_theta0)]
+    for ind in np.arange(1, len(r)):
         r_i = (r[ind] / rc).decompose().value
-        if r_i > 1:
-            result = optimize.root(theta_root, theta_i,
+        if r_i > 0.5:
+            # print('initial guess of theta_i = {0}'.format(theta_i))
+            result = optimize.minimize(theta_abs, theta_i,
+                                       bounds=theta_bracket,
                                    args=(r_i, rad_theta0, ecc, orb_ang))
             theta_i = result.x
             theta[ind] = theta_i
@@ -134,6 +148,7 @@ def stream_line_vel(r, theta, mass=0.5 * u.Msun, r0=1e4 * u.au, theta0=30 * u.de
     It takes the radial velocity and rotation at the streamline
     initial radius and it describes the entire trajectory.
 
+    :param theta:
     :param r:
     :param mass:
     :param r0:
@@ -147,8 +162,11 @@ def stream_line_vel(r, theta, mass=0.5 * u.Msun, r0=1e4 * u.au, theta0=30 * u.de
     rad_theta0 = theta0.to(u.rad).value
     rc = r_cent(mass=mass, omega=omega, r0=r0)
     theta = np.zeros_like(r.value) + np.nan
-    # Initial guess at largest radius is tetha0 + epsilon for numerical reasons
-    theta_i = rad_theta0 + 1e-3
+    # Initial guess at largest radius is theta0 +- epsilon towards the midplane
+    if rad_theta0 < np.radians(90):
+        theta_i = rad_theta0 + 1e-3
+    else:
+        theta_i = rad_theta0 - 1e-3
     # mu and nu are dimensionless
     mu = (rc / r0).decompose().value
     nu = (v_r0 * np.sqrt(rc / (G * mass))).decompose().value
@@ -214,7 +232,7 @@ def xyz_stream(mass=0.5 * u.Msun, r0=1e4 * u.au, theta0=30 * u.deg,
     :return:
     """
     rc = r_cent(mass=mass, omega=omega, r0=r0)
-    r = np.arange(r0.to(u.au).value, rc.to(u.au).value * 0.99999, step=-10) * u.au
+    r = np.arange(r0.to(u.au).value, rc.to(u.au).value*0.5, step=-10) * u.au
     theta = stream_line(r, mass=mass, r0=r0, theta0=theta0,
                         omega=omega, v_r0=v_r0)
     d_phi = get_dphi(theta, theta0=theta0)
