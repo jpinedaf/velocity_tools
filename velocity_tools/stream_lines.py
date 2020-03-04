@@ -17,34 +17,6 @@ def v_k(radius, mass=0.5 * u.Msun):
     return np.sqrt(G * mass / radius).to(u.km / u.s)
 
 
-def v_r(r, theta, mass=0.5 * u.Msun, theta0=30 * u.deg):
-    """
-    Radial velocity component
-    """
-    return v_k(r, mass=mass) * np.sqrt(1 + np.cos(theta) / np.cos(theta0))
-
-
-def v_phi(r, theta, mass=0.5*u.Msun, theta0=30 * u.deg):
-    geom = np.sqrt(1 - np.cos(theta) / np.cos(theta0)) * \
-           np.sin(theta0) / np.sin(theta)
-    return v_k(r, mass=mass) * geom
-
-
-def v_theta(r, theta, mass=0.5 * u.Msun, theta0=30 * u.deg):
-    """
-    Function to calculate the velocity in the theta direction
-    :param r: Radius of the streamline in units of r_u
-    :param theta:
-    :param mass:
-    :param theta0:
-    :return:
-    """
-    geom = (np.cos(theta0) - np.cos(theta)) * \
-           np.sqrt((np.cos(theta0) + np.cos(theta)) / \
-                   (np.cos(theta0) * np.sin(theta) ** 2))
-    return v_k(r, mass=mass) * geom
-
-
 def r_cent(mass=0.5 * u.Msun, omega=1e-14 / u.s, r0=1e4 * u.au):
     """
     Centrifugal radius or disk radius  in the Ulrich (1976)'s model.
@@ -141,10 +113,10 @@ def stream_line(r, mass=0.5 * u.Msun, r0=1e4 * u.au, theta0=30 * u.deg,
     return theta * u.rad
 
 
-def stream_line_vel(r, theta, mass=0.5 * u.Msun, r0=1e4 * u.au, theta0=30 * u.deg,
-                omega=1e-14 / u.s, v_r0=0 * u.km / u.s):
+def stream_line_vel(r, theta, mass=0.5*u.Msun, r0=1e4*u.au, theta0=30*u.deg,
+                omega=1e-14/u.s, v_r0=0*u.km/u.s):
     """
-    It calculates the stream line following Mendoza et al. (2009)
+    It calculates the velocity along the stream line following Mendoza+(2009)
     It takes the radial velocity and rotation at the streamline
     initial radius and it describes the entire trajectory.
 
@@ -156,31 +128,27 @@ def stream_line_vel(r, theta, mass=0.5 * u.Msun, r0=1e4 * u.au, theta0=30 * u.de
     :param phi0:
     :param omega:
     :param v_r0: Initial radial velocity
-    :return: theta
+    :return: v_r, v_theta, v_phi in units of km/s
     """
-    # convert theta0 into radians
-    rad_theta0 = theta0.to(u.rad).value
     rc = r_cent(mass=mass, omega=omega, r0=r0)
-    theta = np.zeros_like(r.value) + np.nan
-    # Initial guess at largest radius is theta0 +- epsilon towards the midplane
-    if rad_theta0 < np.radians(90):
-        theta_i = rad_theta0 + 1e-3
-    else:
-        theta_i = rad_theta0 - 1e-3
+    r_to_rc = (r / rc).decompose().value
+    v_k0 = v_k(rc, mass=mass)
     # mu and nu are dimensionless
     mu = (rc / r0).decompose().value
     nu = (v_r0 * np.sqrt(rc / (G * mass))).decompose().value
     epsilon = nu**2 + mu**2 * np.sin(theta0)**2 - 2 * mu
-    ecc = np.sqrt(1 + epsilon * np.sin(theta0)**2)
+    ecc = np.sqrt(1 + epsilon*np.sin(theta0)**2)
     orb_ang = np.arccos((1 - mu * np.sin(theta0)**2) / ecc)
-    for ind in np.arange(len(r)):
-        r_i = (r[ind] / rc).decompose().value
-        if r_i > 1:
-            result = optimize.root(theta_root, theta_i,
-                                   args=(r_i, rad_theta0, ecc, orb_ang))
-            theta_i = result.x
-            theta[ind] = theta_i
-    return theta * u.rad
+    cos_ratio = np.cos(theta) / np.cos(theta0)
+    xi = np.arccos(cos_ratio) + orb_ang.to(u.rad)#.value
+    #
+    v_r_all = -ecc * np.sin(theta0) * np.sin(xi) / r_to_rc /(1 - ecc*np.cos(xi))
+    v_theta_all = np.sin(theta0) / np.sin(theta) / r_to_rc \
+                  * np.sqrt(np.cos(theta0)**2 - np.cos(theta)**2)
+    v_phi_all = np.sin(theta0)**2 / np.sin(theta) / r_to_rc
+
+    return v_r_all * v_k0, v_theta_all * v_k0, v_phi_all * v_k0
+
 
 def rotate_xyz(x, y, z, inc=30 * u.deg, pa=30 * u.deg):
     """
@@ -214,13 +182,18 @@ def rotate_xyz(x, y, z, inc=30 * u.deg, pa=30 * u.deg):
     return xyz_new[0], xyz_new[1], xyz_new[2]
 
 
-def xyz_stream(mass=0.5 * u.Msun, r0=1e4 * u.au, theta0=30 * u.deg,
-               phi0=15 * u.deg, omega=1e-14 / u.s, v_r0=0 * u.km / u.s,
-               inc=0 * u.deg, pa=0 * u.deg):
+def xyz_stream(mass=0.5*u.Msun, r0=1e4*u.au, theta0=30*u.deg,
+               phi0=15*u.deg, omega=1e-14/u.s, v_r0=0*u.km/u.s,
+               inc=0*u.deg, pa=0*u.deg):
     """
-    it gets xyz coordinates for a stream line and it is also rotated 
-    in PA and inclination along the line of sight.
+    it gets xyz coordinates and velocities for a stream line.
+    They are also rotated in PA and inclination along the line of sight.
     This is a wrapper around stream_line() and rotate_xyz()
+
+    Spherical into cartesian transformation is done for position and velocity
+    using:
+    https://en.wikipedia.org/wiki/Vector_fields_in_cylindrical_and_spherical_coordinates
+
     :param mass:
     :param r0:
     :param theta0:
@@ -236,8 +209,22 @@ def xyz_stream(mass=0.5 * u.Msun, r0=1e4 * u.au, theta0=30 * u.deg,
     theta = stream_line(r, mass=mass, r0=r0, theta0=theta0,
                         omega=omega, v_r0=v_r0)
     d_phi = get_dphi(theta, theta0=theta0)
+    phi = phi0 + d_phi
+    #
+    v_r, v_theta, v_phi = stream_line_vel(r, theta, mass=mass, r0=r0,
+                                          theta0=theta0, omega=omega, v_r0=v_r0)
+    v_x = v_r * np.sin(theta) * np.cos(phi) \
+          + v_theta * np.cos(theta) * np.cos(phi) \
+          - v_phi * np.sin(phi)
+    v_y = v_r * np.sin(theta) * np.sin(phi) \
+          + v_theta * np.cos(theta) * np.sin(phi) \
+          + v_phi * np.cos(phi)
+    v_z = v_r * np.cos(theta) \
+          - v_theta * np.sin(theta)
     # Convert from spherical into cartesian coordinates
+    x = r * np.cos(theta) * np.cos(phi)
+    y = r * np.sin(theta) * np.sin(phi)
     z = r * np.cos(theta)
-    y = r * np.sin(theta) * np.sin(phi0 + d_phi)
-    x = r * np.cos(theta) * np.cos(phi0 + d_phi)
-    return rotate_xyz(x, y, z, inc=inc, pa=pa)
+
+    return rotate_xyz(x, y, z, inc=inc, pa=pa), \
+           rotate_xyz(v_x, v_y, v_z, inc=inc, pa=pa)
