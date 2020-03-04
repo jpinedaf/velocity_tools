@@ -222,7 +222,7 @@ def xyz_stream(mass=0.5*u.Msun, r0=1e4*u.au, theta0=30*u.deg,
     v_z = v_r * np.cos(theta) \
           - v_theta * np.sin(theta)
     # Convert from spherical into cartesian coordinates
-    x = r * np.cos(theta) * np.cos(phi)
+    x = r * np.sin(theta) * np.cos(phi)
     y = r * np.sin(theta) * np.sin(phi)
     z = r * np.cos(theta)
 

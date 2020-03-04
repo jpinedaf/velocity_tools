@@ -9,6 +9,7 @@ class result_container:
     """
     pass
 
+
 def convolve_Vlsr(V_lsr, header):
     """ 
     It Convolves a pure theoretical Vlsr map with a requested beam.
@@ -31,6 +32,7 @@ def convolve_Vlsr(V_lsr, header):
     my_beam = Beam.from_fits_header(header)
     my_beam_kernel = my_beam.as_kernel(pixscale)
     return convolve(V_lsr, my_beam_kernel, boundary='fill', fill_value=np.nan)
+
 
 def generate_Vlsr( radius, angle, inclination=42.*u.deg,
     R_out=300.*u.au, Mstar = 2.2*u.Msun, Vc= 5.2*u.km/u.s):
@@ -57,6 +59,7 @@ def generate_Vlsr( radius, angle, inclination=42.*u.deg,
     Kep_velo[radius > R_out] = np.nan
     return Kep_velo
 
+
 def generate_offsets( header, ra0, dec0, 
     PA_Angle=142.*u.deg, inclination=42.*u.deg):
     """
@@ -67,8 +70,8 @@ def generate_offsets( header, ra0, dec0,
     # Load WCS 
     w = wcs.WCS(header)
     # Create xy array and then coordinates
-    x=np.arange(header['naxis1'])
-    y=np.arange(header['naxis2'])
+    x = np.arange(header['naxis1'])
+    y = np.arange(header['naxis2'])
     #
     # epsilon will be determined as the pixel size
     # epsilon= (np.abs(header['cdelt1'])*u.deg).to('', 
@@ -80,28 +83,29 @@ def generate_offsets( header, ra0, dec0,
     #
     # Ra = Lon, Dec = Lat
     #
-    lon=radec_off[:].lon
-    lat=radec_off[:].lat
-    lon.shape=xx.shape
-    lat.shape=yy.shape
+    lon = radec_off[:].lon
+    lat = radec_off[:].lat
+    lon.shape = xx.shape
+    lat.shape = yy.shape
     # Rotate the axes
     c, s = np.cos(PA_Angle), np.sin(PA_Angle)
-    lat_PA =  c*lat + s*lon
-    lon_PA = -s*lat + c*lon
+    lat_pa = c*lat + s*lon
+    lon_pa = -s*lat + c*lon
     # Deprojection 
     # Major axis in in Lon direction
-    lon_PA /= np.cos(inclination)
+    lon_pa /= np.cos(inclination)
     # deprojected radius
-    dep_angle=np.sqrt( lat_PA**2 + lon_PA**2)
+    dep_angle = np.sqrt(lat_pa**2 + lon_pa**2)
     # deprojected angle
-    angle_PA = np.arctan2(lon_PA, lat_PA)
+    angle_pa = np.arctan2(lon_pa, lat_pa)
     # Store results on class
     results = result_container()
     results.r = dep_angle
-    results.theta= angle_PA
-    results.lat= lat_PA
-    results.lon= lon_PA
+    results.theta = angle_pa
+    results.lat = lat_pa
+    results.lon = lon_pa
     return results
+
 
 def mask_velocity(cube, Vmap, v_width=1.0*u.km/u.s):
     """
@@ -109,20 +113,20 @@ def mask_velocity(cube, Vmap, v_width=1.0*u.km/u.s):
     Vmap : Centroid vekocity map in velocity units.
     
     """
-    cube2=cube.with_spectral_unit(u.km/u.s, velocity_convention='radio')
-    vaxis=cube2.spectral_axis
+    cube2 = cube.with_spectral_unit(u.km/u.s, velocity_convention='radio')
+    vaxis = cube2.spectral_axis
     # Load keplerian velocity model and give proper units
-    vmask=np.zeros( cube2.shape)
-    for ii in np.arange(0,vaxis.size):
-        mask_i=np.abs(Vmap-vaxis[ii])<v_width
-        vmask[ii,:,:]=mask_i
+    vmask = np.zeros(cube2.shape)
+    for ii in np.arange(0, vaxis.size):
+        mask_i = np.abs(Vmap - vaxis[ii]) < v_width
+        vmask[ii, :, :] = mask_i
     # header_v=fits.getheader('fits_files/HD100546_12CO_mscale_cube_3D.fits')
     # file_mask_out='fits_files/test_mask_1kms.fits'
     # fits.writeto(file_mask_out,vmask.astype(np.float), header_v, overwrite=True)
     return vmask.astype(np.float)
 
 
-def vfit_grad( X, Y, V, V_err, nmin=7):
+def vfit_grad(X, Y, V, V_err, nmin=7):
     """
     Function to fit a single gradient to a velocity field.
     It assumes solid body rotation, and it uses the velocity uncertainty.
@@ -213,6 +217,7 @@ def vfit_grad( X, Y, V, V_err, nmin=7):
     results.Vc = vc
     results.Vc_err = vc_err
     return results
+
 
 def average_profile( x, y, dx, dy=None, log=False, oversample=1.):
     """ 
