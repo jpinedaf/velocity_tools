@@ -230,7 +230,7 @@ def xyz_stream(mass=0.5*u.Msun, r0=1e4*u.au, theta0=30*u.deg,
     z = r * np.cos(theta)
     if rmin is not None:
         gd_rmin = (r > rmin)
-        if gd_min.sum() > 0:
+        if gd_rmin.sum() > 0:
             return rotate_xyz(x[gd_rmin], y[gd_rmin], z[gd_rmin], inc=inc, pa=pa),\
                 rotate_xyz(v_x[gd_rmin], v_y[gd_rmin], v_z[gd_rmin], inc=inc, pa=pa)
         else:
