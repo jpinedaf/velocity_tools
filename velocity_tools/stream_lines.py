@@ -184,7 +184,7 @@ def rotate_xyz(x, y, z, inc=30 * u.deg, pa=30 * u.deg):
 
 def xyz_stream(mass=0.5*u.Msun, r0=1e4*u.au, theta0=30*u.deg,
                phi0=15*u.deg, omega=1e-14/u.s, v_r0=0*u.km/u.s,
-               inc=0*u.deg, pa=0*u.deg):
+               inc=0*u.deg, pa=0*u.deg, rmin=None):
     """
     it gets xyz coordinates and velocities for a stream line.
     They are also rotated in PA and inclination along the line of sight.
@@ -202,6 +202,7 @@ def xyz_stream(mass=0.5*u.Msun, r0=1e4*u.au, theta0=30*u.deg,
     :param v_r0:
     :param inc:
     :param pa:
+    :param rmin:
     :return:
     """
     rc = r_cent(mass=mass, omega=omega, r0=r0)
@@ -227,6 +228,13 @@ def xyz_stream(mass=0.5*u.Msun, r0=1e4*u.au, theta0=30*u.deg,
     x = r * np.sin(theta) * np.cos(phi)
     y = r * np.sin(theta) * np.sin(phi)
     z = r * np.cos(theta)
-
-    return rotate_xyz(x, y, z, inc=inc, pa=pa), \
-           rotate_xyz(v_x, v_y, v_z, inc=inc, pa=pa)
+    if rmin is not None:
+        gd_rmin = (r > rmin)
+        if gd_min.sum() > 0:
+            return rotate_xyz(x[gd_rmin], y[gd_rmin], z[gd_rmin], inc=inc, pa=pa),\
+                rotate_xyz(v_x[gd_rmin], v_y[gd_rmin], v_z[gd_rmin], inc=inc, pa=pa)
+        else:
+            return [np.nan], [np.nan], [np.nan], [np.nan], [np.nan], [np.nan]
+    else:
+        return rotate_xyz(x, y, z, inc=inc, pa=pa), \
+               rotate_xyz(v_x, v_y, v_z, inc=inc, pa=pa)
