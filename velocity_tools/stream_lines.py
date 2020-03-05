@@ -205,6 +205,8 @@ def xyz_stream(mass=0.5*u.Msun, r0=1e4*u.au, theta0=30*u.deg,
     :return:
     """
     rc = r_cent(mass=mass, omega=omega, r0=r0)
+    if rc > r0:
+        print('Centrifugal radius is larger than start of streamline')
     r = np.arange(r0.to(u.au).value, rc.to(u.au).value*0.5, step=-10) * u.au
     theta = stream_line(r, mass=mass, r0=r0, theta0=theta0,
                         omega=omega, v_r0=v_r0)
