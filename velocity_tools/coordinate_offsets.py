@@ -167,13 +167,13 @@ def vfit_grad(X, Y, V, V_err, nmin=7):
 # Obtain total weight, and average (x,y,v) to create new variables (dx,dy,dv)
 # which provide a lower uncertainty in the fit.
 #
-    sumWt  = np.sum(wt)
-    x_mean=np.sum(X*wt)/sumWt
-    y_mean=np.sum(Y*wt)/sumWt
-    v_mean=np.sum(V*wt)/sumWt
-    dx = (X-x_mean)#[mask]  # remove mean value from inputs 
-    dy = (Y-y_mean)#[mask]  # to reduce fit uncertainties
-    dv = (V-v_mean)#[mask]  #
+    sumWt = np.sum(wt)
+    x_mean = np.sum(X*wt)/sumWt
+    y_mean = np.sum(Y*wt)/sumWt
+    v_mean = np.sum(V*wt)/sumWt
+    dx = (X-x_mean)  # [mask]  # remove mean value from inputs
+    dy = (Y-y_mean)  # [mask]  # to reduce fit uncertainties
+    dv = (V-v_mean)  # [mask]  #
     M = [[np.sum(wt),   np.sum(dx*wt),    np.sum(dy*wt)], 
         [np.sum(dx*wt), np.sum(dx**2*wt), np.sum(dx*dy*wt)], 
         [np.sum(dy*wt), np.sum(dx*dy*wt), np.sum(dy**2*wt)]]
@@ -186,27 +186,27 @@ def vfit_grad(X, Y, V, V_err, nmin=7):
         sys.exit('Singular matrix: no solution returned')
     coeffs = np.dot(covar,[[np.sum(dv*wt)], [np.sum(dx*dv*wt)],[np.sum(dy*dv*wt)]])
     #
-    errx= np.sqrt(covar[1, 1])
-    erry= np.sqrt(covar[2, 2])
+    errx = np.sqrt(covar[1, 1])
+    erry = np.sqrt(covar[2, 2])
     #
     gx = coeffs[1][0]
     gy = coeffs[2][0]
     #
     vc = coeffs[0]+v_mean
     vp = coeffs[0]+coeffs[1]*dx+coeffs[2]*dy
-    grad     = np.sqrt(coeffs[1]**2+coeffs[2]**2)
-    posang   = np.arctan2(gy, -gx)*180/pi
+    grad = np.sqrt(coeffs[1]**2+coeffs[2]**2)
+    posang = np.arctan2(gy, -gx)*180/pi
     #
-    red_chisq = np.sum( (dv-vp)**2*wt)/(np.len(dv)-3.)
+    # red_chisq = np.sum( (dv-vp)**2*wt)/(np.len(dv)-3.)
 
-    vc_err   = 0.
-    grad_err = np.sqrt((gx*errx)**2+(gy*erry)**2)/grad
+    vc_err = 0.
+    # grad_err = np.sqrt((gx*errx)**2+(gy*erry)**2)/grad
     grad_err = np.sqrt((gx*errx)**2+(gy*erry)**2+2*gx*gy*covar[2,1])/grad
-    paerr    = 180/pi*sqrt((gx/(gx**2+gy**2))**2*erry**2+
-                         (gy/(gx**2+gy**2))**2*errx**2)
-    paerr    = 180/pi*sqrt((gx/(gx**2+gy**2))**2*erry**2+
-                         (gy/(gx**2+gy**2))**2*errx**2-2*gx*gy/(gx**2+gy**2)**2*covar[2,1])
-    chisq    = red_chisq
+    # paerr = 180/pi*sqrt((gx/(gx**2+gy**2))**2*erry**2 +
+    #                      (gy/(gx**2+gy**2))**2*errx**2)
+    paerr = 180/pi*sqrt((gx/(gx**2+gy**2))**2*erry**2 +
+                         (gy/(gx**2+gy**2))**2*errx**2 - 2*gx*gy/(gx**2+gy**2)**2*covar[2,1])
+    # chisq = red_chisq
     vp += v_mean
     #
     results = result_container()
@@ -242,28 +242,28 @@ def average_profile( x, y, dx, dy=None, log=False, oversample=1.):
     """
     if log == False:
         # Linear space
-        xx=x
+        xx = x
     else:
         # log space
-        xx=np.log(x)
+        xx = np.log(x)
 
-    xmin=np.min(xx)
-    xmax=np.max(xx)
-    n_bin=int(np.ceil((xmax-xmin)/dx))
-    xbin=np.zeros(n_bin)
-    dxbin=np.zeros(n_bin)
-    ybin=np.zeros(n_bin)
-    dybin=np.zeros(n_bin)
+    xmin = np.min(xx)
+    xmax = np.max(xx)
+    n_bin = int(np.ceil((xmax-xmin)/dx))
+    xbin = np.zeros(n_bin)
+    dxbin = np.zeros(n_bin)
+    ybin = np.zeros(n_bin)
+    dybin = np.zeros(n_bin)
     for i in range(n_bin):
-        idx=np.where( (xx>xmin+dx*i) & (xx<xmin+dx*(i+1)))
-        xbin[i] = xmin+dx*(i+0.5)
+        idx = np.where((xx > xmin+dx*i) & (xx < xmin+dx*(i+1)))
+        xbin[i] = xmin + dx*(i+0.5)
         #
         if dy is None:
-            ybin[i] =np.average(y[idx])
-            dybin[i]=np.std(y[idx])/np.sqrt(y[idx].size /oversample)
+            ybin[i] = np.average(y[idx])
+            dybin[i] = np.std(y[idx]) / np.sqrt(y[idx].size / oversample)
         else:
-            ybin[i] =np.average(y[idx], weights=1./dy[idx]**2)
-            dybin[i]=1./np.sqrt(np.sum(1./dy[idx]**2))
+            ybin[i] = np.average(y[idx], weights=1./dy[idx]**2)
+            dybin[i] = 1. / np.sqrt(np.sum(1. / dy[idx]**2))
         dxbin[i] = dx*0.5
     if log == False:
         return xbin, ybin, dxbin, dybin

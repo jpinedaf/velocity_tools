@@ -28,7 +28,7 @@ setup(
     description = DESCRIPTION,
     long_description=read('README.md'),
     packages = ['velocity_tools'],
-    install_requires = ['astropy>=2.0'],
+    install_requires = ['astropy>=2.0', 'scipy'],
     author = AUTHOR,
     author_email = AUTHOR_EMAIL,
     license = LICENSE,
