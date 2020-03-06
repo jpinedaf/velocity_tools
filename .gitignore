@@ -5,3 +5,7 @@
 #
 fits_files/
 *.egg-info
+
+#PyCharm files
+.idea/
+*.iml
