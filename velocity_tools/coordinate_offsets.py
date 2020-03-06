@@ -28,7 +28,7 @@ def convolve_Vlsr(V_lsr, header):
     """
     from astropy.convolution import convolve
     from radio_beam import Beam
-    pixscale=np.abs(header['cdelt1'])*u.Unit(header['cunit1'])
+    pixscale = np.abs(header['cdelt1'])*u.Unit(header['cunit1'])
     my_beam = Beam.from_fits_header(header)
     my_beam_kernel = my_beam.as_kernel(pixscale)
     return convolve(V_lsr, my_beam_kernel, boundary='fill', fill_value=np.nan)
@@ -53,32 +53,36 @@ def generate_Vlsr( radius, angle, inclination=42.*u.deg,
     inclination : with units (e.g u.deg or u.rad)
     R_out : Maximum radius of the disk. Position outside this radius are blanked
     """
-    Kep_velo = 29.78 * np.sqrt( (Mstar/u.Msun / (radius/u.au)).decompose()) * u.km/u.s
+    Kep_velo = 29.78 * np.sqrt((Mstar/u.Msun / (radius/u.au)).decompose()) * u.km/u.s
     Kep_velo *= np.sin(inclination) * np.cos(angle)
     Kep_velo += Vc
     Kep_velo[radius > R_out] = np.nan
     return Kep_velo
 
 
-def generate_offsets( header, ra0, dec0, 
-    PA_Angle=142.*u.deg, inclination=42.*u.deg):
+def generate_offsets(header, ra0, dec0, frame='fk5',
+                     pa_angle=142.*u.deg, inclination=42.*u.deg):
     """
     Main geometry: major axis in deprojected lon variable, while lat is the minor axis
+
+    :param header: FITS header of the file to be used
+    :param ra0: RA of reference point for offset calculation (with units)
+    :param dec0: Dec of reference point for offset calculation (with units)
+    :param frame: coordinate frame for reference point (default='fk5')
+    :param pa_angle: PA angle in deg
+    :param inclination: inclination angle in deg
+    :return: a structure with the radius and position angle in the deprojected
+       coordinates, and the x and y offsets also in deprojected coordinates
     """
     #
-    center = SkyCoord(ra0, dec0, frame='fk5')
+    center = SkyCoord(ra0, dec0, frame=frame)
     # Load WCS 
     w = wcs.WCS(header)
     # Create xy array and then coordinates
-    x = np.arange(header['naxis1'])
-    y = np.arange(header['naxis2'])
-    #
-    # epsilon will be determined as the pixel size
-    # epsilon= (np.abs(header['cdelt1'])*u.deg).to('', 
-    #     equivalencies=u.dimensionless_angles())*distance.to(u.au)
-    xx, yy = np.meshgrid(x, y)
+    xx, yy = np.meshgrid(np.arange(header['naxis1']),
+                         np.arange(header['naxis2']))
     world = w.wcs_pix2world(xx.flatten(), yy.flatten(), 0)
-    radec = SkyCoord(world[0]*u.deg, world[1]*u.deg, frame='fk5')
+    radec = SkyCoord(world[0]*u.deg, world[1]*u.deg, frame=frame)
     radec_off = radec.transform_to(center.skyoffset_frame())
     #
     # Ra = Lon, Dec = Lat
@@ -88,7 +92,7 @@ def generate_offsets( header, ra0, dec0,
     lon.shape = xx.shape
     lat.shape = yy.shape
     # Rotate the axes
-    c, s = np.cos(PA_Angle), np.sin(PA_Angle)
+    c, s = np.cos(pa_angle), np.sin(pa_angle)
     lat_pa = c*lat + s*lon
     lon_pa = -s*lat + c*lon
     # Deprojection 
@@ -107,22 +111,24 @@ def generate_offsets( header, ra0, dec0,
     return results
 
 
-def mask_velocity(cube, Vmap, v_width=1.0*u.km/u.s):
+def mask_velocity(cube, v_map, v_width=1.0*u.km/u.s):
     """
-    cube : SpectralCube cube 
-    Vmap : Centroid vekocity map in velocity units.
-    
+    Returns a mask with the pixels in the channel mask within v_width of the
+     expected velocity map (v_map). Values of 1.0s and 0.0s
+
+    :param v_width:
+    :param cube: SpectralCube cube object to work on.
+    :param v_map: Centroid velocity map in velocity units.
+    :return: Mask with shape the same as of the input cube,
+      1=in the mask, 0=outside of the mask.
     """
     cube2 = cube.with_spectral_unit(u.km/u.s, velocity_convention='radio')
     vaxis = cube2.spectral_axis
-    # Load keplerian velocity model and give proper units
+    # Load Keplerian velocity model and give proper units
     vmask = np.zeros(cube2.shape)
     for ii in np.arange(0, vaxis.size):
-        mask_i = np.abs(Vmap - vaxis[ii]) < v_width
+        mask_i = np.abs(v_map - vaxis[ii]) < v_width
         vmask[ii, :, :] = mask_i
-    # header_v=fits.getheader('fits_files/HD100546_12CO_mscale_cube_3D.fits')
-    # file_mask_out='fits_files/test_mask_1kms.fits'
-    # fits.writeto(file_mask_out,vmask.astype(np.float), header_v, overwrite=True)
     return vmask.astype(np.float)
 
 
