@@ -3,13 +3,13 @@
 
 import glob
 import os
-import sys
+# import sys
 
 # import ah_bootstrap
 from setuptools import setup
 
 PACKAGENAME = "velocity_tools"
-DESCRIPTION = ('Tools to help analysis of velocity cubes/field')
+DESCRIPTION = 'Tools to help analysis of velocity cubes/field'
 AUTHOR = 'Jaime E. Pineda'
 AUTHOR_EMAIL = 'jpineda@mpe.mpg.de'
 LICENSE = "MIT"
@@ -23,16 +23,16 @@ def read(fname):
     return open(os.path.join(here, fname)).read()
 
 setup(
-	name = PACKAGENAME,
-    version = VERSION,
-    description = DESCRIPTION,
+    name=PACKAGENAME,
+    version=VERSION,
+    description=DESCRIPTION,
     long_description=read('README.md'),
-    packages = ['velocity_tools'],
-    install_requires = ['astropy>=2.0', 'scipy'],
-    author = AUTHOR,
-    author_email = AUTHOR_EMAIL,
-    license = LICENSE,
-    url = URL,
+    packages=['velocity_tools'],
+    install_requires=['astropy>=2.0', 'scipy', 'numpy'],
+    author=AUTHOR,
+    author_email=AUTHOR_EMAIL,
+    license=LICENSE,
+    url=URL,
     )
       # scripts=scripts,
       # long_description=LONG_DESCRIPTION,
