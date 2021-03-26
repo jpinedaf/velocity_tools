@@ -194,15 +194,15 @@ def xyz_stream(mass=0.5*u.Msun, r0=1e4*u.au, theta0=30*u.deg,
     using:
     https://en.wikipedia.org/wiki/Vector_fields_in_cylindrical_and_spherical_coordinates
 
-    :param mass:
-    :param r0:
-    :param theta0:
-    :param phi0:
-    :param omega:
-    :param v_r0:
-    :param inc:
-    :param pa:
-    :param rmin:
+    :param mass: Central mass
+    :param r0: Initial radius of streamline
+    :param theta0: Initial polar angle of streamline
+    :param phi0: Initial azimuthal angle of streamline
+    :param omega: Angular rotation. (defined positive)
+    :param v_r0: Initial radial velocity of the streamline
+    :param inc: inclination with respect of line-of-sight, inc=0 is an edge-on-disk
+    :param pa: Position angle of the rotation axis, measured due East from North. This is usually estimated from the outflow PA, or the disk PA-90deg.
+    :param rmin: smallest radius for calculation
     :return:
     """
     rc = r_cent(mass=mass, omega=omega, r0=r0)
