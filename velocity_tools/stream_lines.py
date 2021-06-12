@@ -66,7 +66,7 @@ def get_dphi(theta, theta0=np.radians(30)):
 
 
 def stream_line(r, mass=0.5 * u.Msun, r0=1e4 * u.au, theta0=30 * u.deg,
-                omega=1e-14 / u.s, v_r0=0 * u.km / u.s):
+                omega=1e-14 / u.s, v_r0=0 * u.km / u.s, tol=None):
     """
     It calculates the stream line following Mendoza et al. (2009)
     It takes the radial velocity and rotation at the streamline
@@ -105,9 +105,15 @@ def stream_line(r, mass=0.5 * u.Msun, r0=1e4 * u.au, theta0=30 * u.deg,
         r_i = (r[ind] / rc).decompose().value
         if r_i > 0.5:
             # print('initial guess of theta_i = {0}'.format(theta_i))
-            result = optimize.minimize(theta_abs, theta_i,
-                                       bounds=theta_bracket,
-                                   args=(r_i, rad_theta0, ecc, orb_ang))
+            if tol is None:
+                result = optimize.minimize(theta_abs, theta_i,
+                                           bounds=theta_bracket,
+                                           args=(r_i, rad_theta0, ecc, orb_ang))
+            else:
+                result = optimize.minimize(theta_abs, theta_i,
+                                           bounds=theta_bracket,
+                                           args=(r_i, rad_theta0, ecc, orb_ang),
+                                           tol=tol)
             theta_i = result.x
             theta[ind] = theta_i
     return theta * u.rad
@@ -154,7 +160,7 @@ def rotate_xyz(x, y, z, inc=30 * u.deg, pa=30 * u.deg):
     """
     Rotate on inclination and PA
     x-axis and y-axis are on the plane on the sky,
-    z-axis is the 
+    z-axis is the
 
     Rotation around x is inclination angle
     Rotation around y is PA angle
@@ -184,7 +190,7 @@ def rotate_xyz(x, y, z, inc=30 * u.deg, pa=30 * u.deg):
 
 def xyz_stream(mass=0.5*u.Msun, r0=1e4*u.au, theta0=30*u.deg,
                phi0=15*u.deg, omega=1e-14/u.s, v_r0=0*u.km/u.s,
-               inc=0*u.deg, pa=0*u.deg, rmin=None):
+               inc=0*u.deg, pa=0*u.deg, rmin=None, tol=None):
     """
     it gets xyz coordinates and velocities for a stream line.
     They are also rotated in PA and inclination along the line of sight.
@@ -203,6 +209,7 @@ def xyz_stream(mass=0.5*u.Msun, r0=1e4*u.au, theta0=30*u.deg,
     :param inc: inclination with respect of line-of-sight, inc=0 is an edge-on-disk
     :param pa: Position angle of the rotation axis, measured due East from North. This is usually estimated from the outflow PA, or the disk PA-90deg.
     :param rmin: smallest radius for calculation
+    :param tol: tolerance for the optimization, needs to be lower than the difference between two consecutive angles
     :return:
     """
     rc = r_cent(mass=mass, omega=omega, r0=r0)
@@ -210,7 +217,7 @@ def xyz_stream(mass=0.5*u.Msun, r0=1e4*u.au, theta0=30*u.deg,
         print('Centrifugal radius is larger than start of streamline')
     r = np.arange(r0.to(u.au).value, rc.to(u.au).value*0.5, step=-10) * u.au
     theta = stream_line(r, mass=mass, r0=r0, theta0=theta0,
-                        omega=omega, v_r0=v_r0)
+                        omega=omega, v_r0=v_r0, tol=tol)
     d_phi = get_dphi(theta, theta0=theta0)
     phi = phi0 + d_phi
     #
