@@ -79,7 +79,6 @@ def stream_line(r, mass=0.5 * u.Msun, r0=1e4 * u.au, theta0=30 * u.deg,
     :param phi0:
     :param omega:
     :param v_r0: Initial radial velocity
-    :param tol: tolerance for the optimization, needs to be lower than the difference between two consecutive angles
     :return: theta
     """
     # convert theta0 into radians
@@ -135,6 +134,7 @@ def stream_line_vel(r, theta, mass=0.5*u.Msun, r0=1e4*u.au, theta0=30*u.deg,
     :param phi0:
     :param omega:
     :param v_r0: Initial radial velocity
+    :param tol: tolerance for the optimization, needs to be lower than the difference between two consecutive angles
     :return: v_r, v_theta, v_phi in units of km/s
     """
     rc = r_cent(mass=mass, omega=omega, r0=r0)
