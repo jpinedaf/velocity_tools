@@ -96,7 +96,7 @@ def stream_line(r, mass=0.5 * u.Msun, r0=1e4 * u.au, theta0=30 * u.deg,
     # the first element in the streamline is the starting point
     theta[0] = rad_theta0
     # Initial guess at largest radius is theta0 +- initguess towards the midplane
-    deltar = np.amin(np.abs(np.roll(r,1) - r))
+    deltar = np.amin(np.abs(np.roll(r,1) - r)) * u.au
     # we use a constant of 6e-5 for an epsilon of 0.01 km/s
     # this result will be in radians
     tol = (6.e-5 * deltar * omega / (v_r0+ 0.1 * u.km/u.s)).decompose().value
@@ -207,7 +207,7 @@ def rotate_xyz(x, y, z, inc=30 * u.deg, pa=30 * u.deg):
 
 def xyz_stream(mass=0.5*u.Msun, r0=1e4*u.au, theta0=30*u.deg,
                phi0=15*u.deg, omega=1e-14/u.s, v_r0=0*u.km/u.s,
-               inc=0*u.deg, pa=0*u.deg, rmin=None, deltar=1):
+               inc=0*u.deg, pa=0*u.deg, rmin=None, deltar=1*u.au):
     """
     it gets xyz coordinates and velocities for a stream line.
     They are also rotated in PA and inclination along the line of sight.
@@ -232,7 +232,7 @@ def xyz_stream(mass=0.5*u.Msun, r0=1e4*u.au, theta0=30*u.deg,
     rc = r_cent(mass=mass, omega=omega, r0=r0)
     if rc > r0:
         print('Centrifugal radius is larger than start of streamline')
-    r = np.arange(r0.to(u.au).value, rc.to(u.au).value*0.5, step=-1*deltar) * u.au
+    r = np.arange(r0.to(u.au).value, rc.to(u.au).value*0.5, step=-1*deltar.value) * u.au
     theta = stream_line(r, mass=mass, r0=r0, theta0=theta0,
                         omega=omega, v_r0=v_r0)
     d_phi = get_dphi(theta, theta0=theta0)
