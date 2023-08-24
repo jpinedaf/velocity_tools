@@ -12,7 +12,7 @@ LICENSE = "MIT"
 URL = "https://github.com/jpinedaf/velocity_tools.git"
 
 # VERSION should be PEP386 compatible (http://www.python.org/dev/peps/pep-0386)
-VERSION = '0.4.dev2'
+VERSION = '0.5.dev2'
 
 here = os.path.abspath(os.path.dirname(__file__))
 def read(fname):
@@ -24,7 +24,7 @@ setup(
     description=DESCRIPTION,
     long_description=read('README.md'),
     packages=['velocity_tools'],
-    install_requires=['astropy>=2.0', 'scipy', 'numpy'],
+    install_requires=['astropy>=2.0', 'scipy', 'numpy', 'skimage'],
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
     license=LICENSE,
