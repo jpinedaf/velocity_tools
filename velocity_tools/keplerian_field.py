@@ -6,14 +6,17 @@ from astropy import wcs
 from astropy.coordinates import SkyCoord, SkyOffsetFrame
 from radio_beam import Beam
 from astropy.convolution import convolve
+from skimage.morphology import erosion 
 
 class result_container:
     """ Function to create class container
     """
     pass
 
-def convolve_Vlsr(V_lsr, header):
+def convolve_Vlsr(V_lsr, header, dilation=False):
     """ Convolve Vlsr map with beam in header
+    If dilation is True, then mask all convolved data beyond
+    one beam.
     """
     pixscale=np.abs(header['cdelt1'])
     if header['cunit1'] == 'arcsec':
@@ -22,7 +25,24 @@ def convolve_Vlsr(V_lsr, header):
         pixscale *= u.deg
     my_beam = Beam.from_fits_header(header)
     my_beam_kernel = my_beam.as_kernel(pixscale)
-    return convolve(V_lsr, my_beam_kernel, boundary='fill', fill_value=np.nan)
+    if dilation == False:
+        return convolve(V_lsr, my_beam_kernel, boundary='fill', fill_value=np.nan)
+    else:
+        v_convolved = convolve(V_lsr, my_beam_kernel, boundary='fill', fill_value=np.nan)
+        nimage = np.ceil(np.abs(header['BMAJ'] / header['CDELT1'])).astype(int)
+        if nimage % 2 == 0:
+            nimage += 1
+        # creates box with zeros with the size of the major axis, 
+        # and place a 1 at the center
+        center = (nimage - 1) // 2
+        box_beam = np.zeros((nimage, nimage))
+        box_beam[center, center] = 1
+        # convolve box with beam and then threshold it to half-power
+        beam_shape = convolve(box_beam, my_beam_kernel)
+        beam_footprint = ((beam_shape / beam_shape.max()) > 0.5) + 0
+        bad = erosion(np.isnan(V_lsr), beam_footprint)
+        v_convolved[bad] = np.nan
+        return v_convolved 
 
 def _generate_dummy_file():
     """ 
@@ -55,7 +75,7 @@ def _generate_dummy_file():
     hdu.header['BPA']=0.0
     hdu.writeto( file_in, overwrite=True)
 
-def generate_Vlsr(header, ra0, dec0, file_out='fits_files/test_Vc.fits',
+def generate_Vlsr(header, ra0, dec0, 
     PA_Angle=142.*u.deg, inclination=42.*u.deg, distance=110.02*u.pc,
     R_out=300.*u.au, Mstar=2.2*u.Msun, Vc=5.2*u.km/u.s, do_plot=False):
     """
@@ -102,7 +122,7 @@ def generate_Vlsr(header, ra0, dec0, file_out='fits_files/test_Vc.fits',
                          equivalencies=u.dimensionless_angles())*distance.to(u.au),
                          epsilon.to(u.au), None)
     Kep_velo = 29.78 * np.sqrt(Mstar/u.Msun / (dep_radius/u.au)) \
-               * np.sin(inclination) * np.cos(angle_PA)*u.km/u.s
+               * np.abs(np.sin(inclination)) * np.cos(angle_PA)*u.km/u.s
     Kep_velo += Vc
     Kep_velo[dep_radius > R_out] = np.nan
     #
