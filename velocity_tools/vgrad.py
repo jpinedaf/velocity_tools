@@ -188,11 +188,11 @@ def vfit_image(file_vc, file_evc, distance=300.0*u.pc,
     result_all = vfit(xv[gd], yv[gd], vc[gd], evc[gd], distance=distance)
     result = vfit_local(xv[gd], yv[gd], vc[gd], evc[gd], distance=distance, 
         width=width, nmin=n_oversample * beam_pix)
-    grad = vc.value * 0 + np.nan
-    grad_err = grad
-    grad_PA = grad
-    grad_PA_err = grad
-    grad_vc = grad
+    grad = np.empty(vc.shape) + np.nan
+    grad_err = np.empty(vc.shape) + np.nan
+    grad_PA = np.empty(vc.shape) + np.nan
+    grad_PA_err = np.empty(vc.shape) + np.nan
+    grad_vc = np.empty(vc.shape) + np.nan
     # v_pred = grad
 
     grad[gd] = result['grad']
