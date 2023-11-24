@@ -9,3 +9,6 @@ fits_files/
 #PyCharm files
 .idea/
 *.iml
+
+#MacOS folder
+.DS_Store/
