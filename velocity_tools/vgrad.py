@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+import os
 
 import astropy.units as u
 from astropy.io import fits
