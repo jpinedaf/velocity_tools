@@ -5,6 +5,8 @@
 #
 fits_files/
 *.egg-info
+build/
+dist/
 
 #PyCharm files
 .idea/

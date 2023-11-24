@@ -65,7 +65,7 @@ x_t = -1* np.arange(n_pix) * u.arcsec#.to(u.deg)
 y_t = np.arange(n_pix) * (u.arcsec)#.to(u.deg)
 xv, yv = np.meshgrid(x_t, y_t, indexing='xy')
 gx = -2.0 * u.km / u.s / u.deg
-gy = 2.0 * u.km / u.s / u.deg
+gy = -2.0 * u.km / u.s / u.deg
 v0 = 8.5 * u.km / u.s
 ev0 = 0.1 * u.km / u.s
 v_t = (xv * gx + yv * gy).to(u.km / u.s) + v0 # km/s
@@ -166,8 +166,8 @@ dec_grad = dec_map[gd_grad]
 grad_abs = result['grad'][gd_grad]
 grad_pa = result['posang'][gd_grad]
 #
-grad_x = grad_abs * np.sin(np.deg2rad(grad_pa + 90))
-grad_y = grad_abs * np.cos(np.deg2rad(grad_pa + 90))
+grad_x = grad_abs * np.cos(np.deg2rad(grad_pa + 90))
+grad_y = grad_abs * np.sin(np.deg2rad(grad_pa + 90))
 """
 I don't know how to plot the quivers in sky unit coordinates
 ax1.quiver(ra_grad*u.deg, dec_grad*u.deg, grad_x*u.deg, grad_y*u.deg, scale=10, 
