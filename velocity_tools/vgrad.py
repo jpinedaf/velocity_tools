@@ -4,51 +4,41 @@ import sys
 import astropy.units as u
 from astropy.io import fits
 
-def pause():
-    programPause = raw_input("Press the <ENTER> key to continue...")
 
 def vfit(x, y, v, ev, distance=300.0*u.pc):
     """
-    It calculates the velocity gradient to a group of velocity 
-    measuments.
+    .. py:function:: vfit(x, y, v, ev, [distance=300.0*u.pc])
 
-    INPUTS:
-        x:          array of RA off-set positions with units.
-        y:          array of Dec off-set positions with units.
-        v:          Velocity at the position with units.
-        ev:         Uncertainty in velocity with units.
-    KEYWORD PARAMETERS:
-        distance:   Distance to the region in pc.
-    OUTPUTS:
-        Vc:         Mean centroid velocity in km/s
-        Vc_err:     Uncertainty of the mean centroid velocity in km/s
-        Grad:       Velocity gradient in km/s/pc
-        Grad_Err:   Uncertainty associated to the velocity gradient (km/s/pc)
-        PosAng:     Position angle of the fitted gradient, in degrees
-        PAErr:      Uncertainty of the position angle (degrees)
-        ChiSq:      Chi^2
+    It calculates the velocity gradient to a group of velocity 
+    measuments. 
+
+    :param float x: The array with the offsets in x-axis (usually delta RA) 
+    in angle units.
+    :param float y: The array with the offsets in y-axis (usually delta Dec) 
+    in angle units.
+    :param float v: The array with the velocity measurements (usually Vlsr) 
+    in velocity units.
+    :param float ev: The array with the uncertainty in the velocity 
+    measurements (usually Vlsr) in velocity units.
+    :float distance: The distance to the region studied with distance 
+    units. Default value is 300 pc.
+    :return: structure with results from the fit. The gradient is in units 
+    of km/s/pc, while the position angle is in degrees measured 
+    East-from-North. Velocities are reported in km/s.
     """
     # TODO:
-    # -Check for no NaNs in the input arrays
     # -Check input arrays have same length
-    # -Check distance is positive
     #
+    if (np.count_nonzero(np.isnan(x))):  sys.exit('There are NaNs in x-axis')
+    if (np.count_nonzero(np.isnan(y))):  sys.exit('There are NaNs in y-axis')
+    if (np.count_nonzero(np.isnan(v))):  sys.exit('There are NaNs in v-axis')
+    if (np.count_nonzero(np.isnan(ev))):  sys.exit('There are NaNs in velocity error')
+    if (np.count_nonzero(ev == 0.0)):  sys.exit('There are 0.0 in velocity error')
+    #
+    if (distance <= 0):  sys.exit('distance cannot be negative')
 
-    # dtor = np.pi/180.*1000
-    if (distance >= 0):
-        # conv = distance * dtor #X and Y are in degrees => pc
-        # comb = [resolution.to(u.rad).value, 
-        #         x.to(u.rad).value, y.to(u.rad).value] * u.rad
-        # comb_d = comb.to('', equivalencies=u.dimensionless_angles()) * distance
-        # resolution_i, x_i, y_i = comb_d
-        x_d = (x.to('', equivalencies=u.dimensionless_angles()) * distance).to(u.pc).value
-        y_d = (y.to('', equivalencies=u.dimensionless_angles()) * distance).to(u.pc).value
-        # resolution *= conv
-        # X = X * conv
-        # Y = Y * conv
-    else:
-        sys.exit('distance is negative!!')
-        return
+    x_d = (x.to('', equivalencies=u.dimensionless_angles()) * distance).to(u.pc).value
+    y_d = (y.to('', equivalencies=u.dimensionless_angles()) * distance).to(u.pc).value
 
     # Obtain total weight, and average (x,y,v) to create new variables (dx,dy,dv)
     # which provide a lower uncertainty in the fit.
@@ -59,8 +49,8 @@ def vfit(x, y, v, ev, distance=300.0*u.pc):
     v_d = v.to(u.km / u.s).value
     ev_d = ev.to(u.km / u.s).value
     wt = 1.0 / ev_d**2
+    #
     suma = np.sum(wt)
-
     x_mean = np.sum(x_d * wt) / suma
     y_mean = np.sum(y_d * wt) / suma
     v_mean = np.sum(v_d * wt) / suma
@@ -68,12 +58,10 @@ def vfit(x, y, v, ev, distance=300.0*u.pc):
     dx = (x_d - x_mean)
     dy = (y_d - y_mean)
     dv = (v_d - v_mean)
-
     #
     M = np.array([[np.sum(wt), np.sum(dx * wt), np.sum(dy * wt)], 
         [np.sum(dx * wt), np.sum(dx**2 * wt), np.sum(dx * dy * wt)], 
         [np.sum(dy * wt), np.sum(dx * dy * wt), np.sum(dy**2 * wt)]])
-    #print M
     try:
         covar = np.linalg.inv(M.T)
     except IOError:
@@ -90,28 +78,24 @@ def vfit(x, y, v, ev, distance=300.0*u.pc):
     vc = coeffs[0][0] + v_mean
     vp = coeffs[0][0] + gx * dx + gy * dy
     grad = np.sqrt(gx**2 + gy**2)
-    posang = np.rad2deg(np.arctan2(gy, -gx))# * 180 / pi
+    posang = np.rad2deg(np.arctan2(gx, gy))# + np.pi/2.)
     # chi^2_red
     red_chisq = np.sum((dv - vp)**2 * wt) / (len(dv) - 3.)
 
     vc_err = 0.
     # grad_err = np.sqrt((gx * errx)**2 + (gy * erry)**2) / grad
-    grad_err = np.sqrt((gx * errx)**2 + (gy * erry)**2 
-                     + 2 * gx * gy * covar[2, 1]) / grad
     # paerr = np.rad2deg(np.sqrt((gx / (gx**2 + gy**2))**2 * erry**2 +
     #                  (gy / (gx**2 + gy**2))**2 * errx**2))
+    # Associated error including covariance
+    grad_err = np.sqrt((gx * errx)**2 + (gy * erry)**2 
+                     + 2 * gx * gy * covar[2, 1]) / grad
+    
     paerr = np.rad2deg(np.sqrt((gx / (gx**2 + gy**2))**2 * erry**2 +    
                      (gy / (gx**2 + gy**2))**2 * errx**2 
                      - 2 * gx * gy / (gx**2 + gy**2)**2 * covar[2, 1]))
     chisq = red_chisq
     vp += v_mean
 
-    # import matplotlib.pyplot as plt
-    # plt.ion()
-    # plt.scatter(-dx, dy, c=dv, cmap='RdYlBu_r')
-    # plt.scatter(-dx, dy, c=vp, cmap='RdYlBu_r')
-    # pause()
-    # re
     results = {'grad': grad, 'grad_err': grad_err, 
                'posang': posang, 'paerr': paerr, 
                'chisq': chisq, 'vc': vc, 'vc_err': vc_err,
@@ -120,12 +104,35 @@ def vfit(x, y, v, ev, distance=300.0*u.pc):
     return results
 
 
-def vfit_local(x, y, v, ev, distance=300.0*u.pc, 
-    width=45*u.arcsec, nmin=7):
+def vfit_local(x, y, v, ev, distance=300.0*u.pc, width=45*u.arcsec, nmin=7.0):
     """
-    Function to calculate local gradients
+    .. py:function:: vfit_local(x, y, v, ev, [distance=300.0*u.pc],
+    [width=45*u.arcsec], [nmin=7])
+
+    It calculates the velocity gradient to a group of velocity 
+    measuments. It uses a box of a requested width to determine which 
+    pixels to use in the local calculation. The calculation is performed
+    at every pixel, and it uses the vfit() function.
+
+
+
     nmin is the number of pixels, a value of 7 is a good value in the case
         of a Nyquist sampled dataset.
+    :param float x: The array with the offsets in x-axis (usually delta RA) 
+    in angle units.
+    :param float y: The array with the offsets in y-axis (usually delta Dec) 
+    in angle units.
+    :param float v: The array with the velocity measurements (usually Vlsr) 
+    in velocity units.
+    :param float ev: The array with the uncertainty in the velocity 
+    measurements (usually Vlsr) in velocity units.
+    :float distance: The distance to the region studied with distance 
+    units. Default value is 300 pc.
+    :float width: The angular size of the box used in the pixel selection for 
+    calculation, in units of angle. Default value is 45 arcsec.
+    :float nmin: Minimum number of pixels in the requested box to perform the
+    gradient fit. Default value is 7.
+    :return: structure with results from all the fits.
     """
     
     grad = np.empty(x.shape)
@@ -135,18 +142,21 @@ def vfit_local(x, y, v, ev, distance=300.0*u.pc,
     vc = np.empty(x.shape)
     chisq = np.empty(x.shape)
     #
-    grad[:] = np.nan # * u.km / u.s / u.pc
-    grad_err[:] = np.nan #* u.km / u.s / u.pc
-    posang[:] = np.nan #* u.deg
-    paerr[:] = np.nan #* u.deg
-    vc[:] = np.nan # * u.km / u.s
+    grad[:] = np.nan #
+    grad_err[:] = np.nan #
+    posang[:] = np.nan #
+    paerr[:] = np.nan #
+    vc[:] = np.nan #
     chisq[:] = np.nan
 
     for index, (x_i, y_i) in enumerate(zip(x, y)):
         # determine distances between all pixels to the one processing
         # and select all pixels within a radius of width.
-        dxy = np.sqrt((x - x_i)**2 + (y - y_i)**2)
-        gd = (dxy <= width)
+        # dxy = np.sqrt((x - x_i)**2 + (y - y_i)**2)
+        # gd = (dxy <= width)
+        dx = np.abs(x - x_i)
+        dy = np.abs(y - y_i)
+        gd = (dx <= width * 0.5) & (dy <= width * 0.5)
         # determine the gradient only of there are enough pixels
         #
         if np.sum(gd) > nmin:
@@ -165,8 +175,42 @@ def vfit_local(x, y, v, ev, distance=300.0*u.pc,
     return results
 
 
-def vfit_image(file_vc, file_evc, distance=300.0*u.pc, 
-                width=None, n_oversample=7):
+def vfit_image(file_vc, file_evc, distance=300.0*u.pc, width=None, 
+        n_oversample=7):
+    """
+    .. py:function:: vfit_image(file_vc, file_evc, [distance=300.0*u.pc],
+    [width=45*u.arcsec], [n_oversample=7])
+
+    It loads the velocity and error in the velocity maps and calculates 
+    the global velocity gradient and all the local velocity gradients 
+    possible.
+    It uses a box of a requested width to determine which 
+    pixels to use in the local calculation.
+
+
+    nmin is the number of pixels, a value of 7 is a good value in the case
+        of a Nyquist sampled dataset.
+    :param str file_vc: The filename to the FITS file with the centroid 
+    velocity measurements. If no unit is present in the header, 
+    it assumes km/s.
+    :param str file_evc: The filename to the FITS file with the uncertainty 
+    to the centroid velocity measurements. If no unit is present in the header, 
+    it assumes km/s.
+    :float distance: The distance to the region studied with distance 
+    units. Default value is 300 pc.
+    :float width: The angular size of the box used in the pixel selection for 
+    calculation, in units of angle. Default value is 45 arcsec.
+    :float n_oversample: Minimum number of pixels in the requested box to 
+    perform the gradient fit (in a Nyquist sampled map). In the case of 
+    oversampled maps (e.g., interferometers), the code takes the oversampling
+    into account to correct for this. Default value is 7. 
+    :return: structure with results from all the fits.
+    """
+    if (os.path.isfile(file_vc) == False):
+        sys.exit('Velocity file not found')
+    if (os.path.isfile(file_evc) == False):
+        sys.exit('Uncertainty velocity file not found')
+    
     vc, hd = fits.getdata(file_vc, header=True)
     evc = fits.getdata(file_evc)
     if (hd['BUNIT'] == 'm/s') | (hd['BUNIT'] == 'm s-1'):
@@ -181,7 +225,7 @@ def vfit_image(file_vc, file_evc, distance=300.0*u.pc,
     gd = (np.isfinite(vc * evc) & (evc.value != 0))
     
     if width == None:
-        width = hd['BMAJ'] * u.deg
+        width = 2 * hd['BMAJ'] * u.deg
 
     beam_pix = np.abs((hd['BMAJ'] * hd['BMIN']) / 
                      (4 * hd['CDELT1'] * hd['CDELT2']))
@@ -200,7 +244,6 @@ def vfit_image(file_vc, file_evc, distance=300.0*u.pc,
     grad_PA[gd] = result['posang']
     grad_PA_err[gd] = result['paerr']
     grad_vc[gd] = result['vc']
-    # v_pred[gd] = result['v_pred']
     #
     # Store global fit results in header
     # 
@@ -212,5 +255,5 @@ def vfit_image(file_vc, file_evc, distance=300.0*u.pc,
     hd['VG_vc'] = result_all['vc']
     results_image = {'grad': grad, 'grad_err': grad_err, 
            'posang': grad_PA, 'paerr': grad_PA_err, 
-           'vc': vc, 'header':hd} # 'v_pred': v_pred, 
+           'vc': vc, 'header':hd}
     return results_image
