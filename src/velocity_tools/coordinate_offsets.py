@@ -4,6 +4,7 @@ import astropy.units as u
 from astropy import wcs
 from astropy.coordinates import SkyCoord
 
+
 class result_container:
     """ Function to create class container
     """
@@ -34,8 +35,8 @@ def convolve_Vlsr(V_lsr, header):
     return convolve(V_lsr, my_beam_kernel, boundary='fill', fill_value=np.nan)
 
 
-def generate_Vlsr( radius, angle, inclination=42.*u.deg,
-    R_out=300.*u.au, Mstar = 2.2*u.Msun, Vc= 5.2*u.km/u.s):
+def generate_Vlsr(radius, angle, inclination=42.*u.deg,
+                  R_out=300.*u.au, Mstar=2.2*u.Msun, Vc=5.2*u.km/u.s):
     """
     Keplerian velocity field, for a star of mass=Mstar, inclination angle with 
     respect of the sky of inclination.
@@ -43,7 +44,7 @@ def generate_Vlsr( radius, angle, inclination=42.*u.deg,
     The central velocity of the star is Vlsr, 
     and the maximum outer disk radius is Rout
     It makes full use of astropy.units.
-    
+
     param :
     radius : radius in distance units (e.g. u.au or u.pc)
     angle : position angle with respect to major axis
@@ -53,7 +54,8 @@ def generate_Vlsr( radius, angle, inclination=42.*u.deg,
     inclination : with units (e.g u.deg or u.rad)
     R_out : Maximum radius of the disk. Position outside this radius are blanked
     """
-    Kep_velo = 29.78 * np.sqrt((Mstar/u.Msun / (radius/u.au)).decompose()) * u.km/u.s
+    Kep_velo = 29.78 * \
+        np.sqrt((Mstar/u.Msun / (radius/u.au)).decompose()) * u.km/u.s
     Kep_velo *= np.sin(inclination) * np.cos(angle)
     Kep_velo += Vc
     Kep_velo[radius > R_out] = np.nan
@@ -76,7 +78,7 @@ def generate_offsets(header, ra0, dec0, frame='fk5',
     """
     #
     center = SkyCoord(ra0, dec0, frame=frame)
-    # Load WCS 
+    # Load WCS
     w = wcs.WCS(header)
     # Create xy array and then coordinates
     xx, yy = np.meshgrid(np.arange(header['naxis1']),
@@ -95,7 +97,7 @@ def generate_offsets(header, ra0, dec0, frame='fk5',
     c, s = np.cos(pa_angle), np.sin(pa_angle)
     lat_pa = c*lat + s*lon
     lon_pa = -s*lat + c*lon
-    # Deprojection 
+    # Deprojection
     # Major axis in in Lon direction
     lon_pa /= np.cos(inclination)
     # deprojected radius
@@ -159,7 +161,7 @@ def vfit_grad(X, Y, V, V_err, nmin=7):
     # Xold = copy(X)
     # Yold = copy(Y)
     npts = X.shape
-    
+
     if npts < nmin:
         results = result_container()
         results.Grad = np.nan
@@ -168,7 +170,7 @@ def vfit_grad(X, Y, V, V_err, nmin=7):
         results.GradPA_err = np.nan
         results.Vc = np.nan
         results.Vc_err = np.nan
-        return results #
+        return results
     wt = 1/(V_err**2)
 # Obtain total weight, and average (x,y,v) to create new variables (dx,dy,dv)
 # which provide a lower uncertainty in the fit.
@@ -180,9 +182,9 @@ def vfit_grad(X, Y, V, V_err, nmin=7):
     dx = (X-x_mean)  # [mask]  # remove mean value from inputs
     dy = (Y-y_mean)  # [mask]  # to reduce fit uncertainties
     dv = (V-v_mean)  # [mask]  #
-    M = [[np.sum(wt),   np.sum(dx*wt),    np.sum(dy*wt)], 
-        [np.sum(dx*wt), np.sum(dx**2*wt), np.sum(dx*dy*wt)], 
-        [np.sum(dy*wt), np.sum(dx*dy*wt), np.sum(dy**2*wt)]]
+    M = [[np.sum(wt),   np.sum(dx*wt),    np.sum(dy*wt)],
+         [np.sum(dx*wt), np.sum(dx**2*wt), np.sum(dx*dy*wt)],
+         [np.sum(dy*wt), np.sum(dx*dy*wt), np.sum(dy**2*wt)]]
     #
     from scipy import linalg
     try:
@@ -190,7 +192,8 @@ def vfit_grad(X, Y, V, V_err, nmin=7):
     except IOError:
         import sys
         sys.exit('Singular matrix: no solution returned')
-    coeffs = np.dot(covar,[[np.sum(dv*wt)], [np.sum(dx*dv*wt)],[np.sum(dy*dv*wt)]])
+    coeffs = np.dot(
+        covar, [[np.sum(dv*wt)], [np.sum(dx*dv*wt)], [np.sum(dy*dv*wt)]])
     #
     errx = np.sqrt(covar[1, 1])
     erry = np.sqrt(covar[2, 2])
@@ -207,11 +210,11 @@ def vfit_grad(X, Y, V, V_err, nmin=7):
 
     vc_err = 0.
     # grad_err = np.sqrt((gx*errx)**2+(gy*erry)**2)/grad
-    grad_err = np.sqrt((gx*errx)**2+(gy*erry)**2+2*gx*gy*covar[2,1])/grad
+    grad_err = np.sqrt((gx*errx)**2+(gy*erry)**2+2*gx*gy*covar[2, 1])/grad
     # paerr = 180/pi*sqrt((gx/(gx**2+gy**2))**2*erry**2 +
     #                      (gy/(gx**2+gy**2))**2*errx**2)
     paerr = 180/pi*sqrt((gx/(gx**2+gy**2))**2*erry**2 +
-                         (gy/(gx**2+gy**2))**2*errx**2 - 2*gx*gy/(gx**2+gy**2)**2*covar[2,1])
+                        (gy/(gx**2+gy**2))**2*errx**2 - 2*gx*gy/(gx**2+gy**2)**2*covar[2, 1])
     # chisq = red_chisq
     vp += v_mean
     #
@@ -225,7 +228,7 @@ def vfit_grad(X, Y, V, V_err, nmin=7):
     return results
 
 
-def average_profile( x, y, dx, dy=None, log=False, oversample=1.):
+def average_profile(x, y, dx, dy=None, log=False, oversample=1.):
     """ 
     Averaging function to create a radial profile.
 
@@ -238,7 +241,7 @@ def average_profile( x, y, dx, dy=None, log=False, oversample=1.):
             This is the number to correct for the correlated number of pixesl within a beam. 
             Default is 1.
             Normal usage should be (beamsize/pixelsize)**2
-    
+
     returns: xbin, ybin, dxbin, dybin
     xbin : the middle of the bin
     ybin : the mean of the y values in the given bin
