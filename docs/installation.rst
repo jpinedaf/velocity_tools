@@ -18,7 +18,7 @@ To install the latest stable release, you can type::
 
 
 Developer version
-------------
+-----------------
 Install by cloning locally the repository on `GitHub <https://github.com/jpinedaf/velocity_tools>`_.
 If you want to install the latest developer version of the ``velocity-tools`` code, you
 can do so from the git repository::
