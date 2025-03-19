@@ -10,8 +10,6 @@ Welcome to Velocity Tools's documentation!
 
      installation
      usage
-     api_reference
-     contributing
 
 Indices and tables
 ==================
