@@ -208,9 +208,9 @@ def vfit_image(file_vc, file_evc, distance=300.0*u.pc, width=None,
     :return: structure with results from all the fits.
     """
     if (os.path.isfile(file_vc) == False):
-        sys.exit('Velocity file not found')
+        raise FileNotFoundError(f'File not found: {file_vc}')
     if (os.path.isfile(file_evc) == False):
-        sys.exit('Uncertainty velocity file not found')
+        raise FileNotFoundError(f'File not found: {file_evc}')
     
     vc, hd = fits.getdata(file_vc, header=True)
     evc = fits.getdata(file_evc)
