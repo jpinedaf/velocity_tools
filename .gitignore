@@ -8,9 +8,32 @@ fits_files/
 build/
 dist/
 
-#PyCharm files
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+#VSCode and PyCharm files
+.vscode/
 .idea/
 *.iml
 
 #MacOS folder
 .DS_Store/
+
+# Sphinx documentation
+docs/_build/

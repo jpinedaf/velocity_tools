@@ -1,4 +1,4 @@
-%run stream_lines.py
+# %run stream_lines.py
 import matplotlib.pyplot as plt
 import numpy as np
 import astropy.units as u

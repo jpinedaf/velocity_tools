@@ -1,7 +1,7 @@
-%run stream_lines.py
+# %run stream_lines.py
 import numpy as np
 import astropy.units as u
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt/
 
 # Initial test: change in PA for vector = showin x- and y-axes
 x_x = 1.
