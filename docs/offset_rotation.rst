@@ -1,10 +1,10 @@
-.. _doc_offsetrot:
+.. _doc_offset_rotation:
 
 Offsets and calculations using the spatial information
 ======================================================
 
 Offsets and Sky rotation calculation
-------------------------------------------------
+------------------------------------
 
 The offsets are calculated using the FITS header and by providing 
 a sky coordinate to define the center of the image. 
@@ -28,10 +28,10 @@ The useage is as follows:
     pa_TMC1 = -32 * u.deg
     
     # Calculate offsets
-    offsets = calculate_offsets(header, ra0, dec0, frame='fk5',
+    offsets = generate_offsets(header, ra0, dec0, frame='fk5',
                      pa_angle=0.*u.deg, inclination=0.*u.deg)
     
-    offset_rot = calculate_offsets(header, ra0, dec0, frame='fk5',
+    offset_rot = generate_offsets(header, ra0, dec0, frame='fk5',
                      pa_angle=pa_TMC1, inclination=0.*u.deg)
 
 The example calculates the offsets for a FITS file with a given RA and DEC

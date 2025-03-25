@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import astropy.units as u
 from .coordinate_offsets import generate_offsets
 from radio_beam import Beam
@@ -27,12 +26,7 @@ def convolve_Vlsr(V_lsr, header, dilation=False):
         If dilation is True, then mask all convolved data beyond
         one beam.
     """
-    # pixscale=np.abs(header['cdelt1'])
     pixscale = np.abs(header['cdelt1'])*u.Unit(header['cunit1'])
-    # if header['cunit1'] == 'arcsec':
-    #     pixscale *= u.arcsec
-    # else:
-    #     pixscale *= u.deg
     my_beam = Beam.from_fits_header(header)
     my_beam_kernel = my_beam.as_kernel(pixscale)
     if dilation == False:
@@ -83,7 +77,7 @@ def keplerian_field(radius_2d:u.au, Pangle_2d:u.deg,
 
 def generate_Vlsr(header, ra0, dec0, frame='fk5',
     PA_Angle=142.*u.deg, inclination=42.*u.deg, distance=110.02*u.pc,
-    R_out=300.*u.au, Mstar=2.2*u.Msun, Vc=5.2*u.km/u.s, do_plot=False):
+    R_out=300.*u.au, Mstar=2.2*u.Msun, Vc=5.2*u.km/u.s) -> result_container:
     """
     Keplerian velocity field, for a star of mass=Mstar, inclination angle with 
     respect of the sky of inclination.
@@ -153,42 +147,42 @@ def generate_Vlsr(header, ra0, dec0, frame='fk5',
     Kep_velo += Vc
     # Kep_velo[dep_radius > R_out] = np.nan
     #
-    if do_plot:
-        # Plot
-        axes_extent = [(results.pre_lon.to(u.arcsec).value).max(),
-                       (results.pre_lon.to(u.arcsec).value).min(),
-                       (results.pre_lat.to(u.arcsec).value).min(),
-                       (results.pre_lat.to(u.arcsec).value).max()]
-        plt.ion()
-        plt.figure(figsize=(12, 6))
-        plt.subplot(1, 2, 1)
-        plt.imshow(dep_radius.value, origin='lower', interpolation='none',
-                   extent=axes_extent)
-        dx_line = (results.pre_lat.to(u.arcsec).value).max() * 0.2
-        dv_disk = (np.nanmax(np.abs(Kep_velo - Vc))).value
-        plt.contour(dep_radius.value,
-                    np.linspace(np.nanmin(dep_radius.value),
-                                np.nanmax(dep_radius.value), num=10),
-                    colors='k', extent=axes_extent)
-        plt.plot([0.0, dx_line*np.sin(PA_Angle)],
-                 [0.0, dx_line*np.cos(PA_Angle)], color='gray')
-        plt.plot([0.0, dx_line*np.sin(PA_Angle+90.*u.deg)],
-                 [0.0, dx_line*np.cos(PA_Angle+90.*u.deg)], color='red')
-        plt.title('Deprojected radius, $r_{PA,i}$')
-        #
-        plt.subplot(1, 2, 2)
-        plt.imshow(Kep_velo.value, origin='lower', cmap='RdYlBu_r',
-                   interpolation='none', extent=axes_extent)
-        plt.contour(Kep_velo.value,
-                    np.linspace(Vc.value - dv_disk,
-                                Vc.value + dv_disk,
-                                #np.nanmin(Kep_velo.value),
-                                #np.nanmax(Kep_velo.value),
-                                num=10),
-                    colors='k', extent=axes_extent)
-        plt.title('Projected $V_{Kep}$')
+    # if do_plot:
+    #     # Plot
+    #     axes_extent = [(results.pre_lon.to(u.arcsec).value).max(),
+    #                    (results.pre_lon.to(u.arcsec).value).min(),
+    #                    (results.pre_lat.to(u.arcsec).value).min(),
+    #                    (results.pre_lat.to(u.arcsec).value).max()]
+    #     plt.ion()
+    #     plt.figure(figsize=(12, 6))
+    #     plt.subplot(1, 2, 1)
+    #     plt.imshow(dep_radius.value, origin='lower', interpolation='none',
+    #                extent=axes_extent)
+    #     dx_line = (results.pre_lat.to(u.arcsec).value).max() * 0.2
+    #     dv_disk = (np.nanmax(np.abs(Kep_velo - Vc))).value
+    #     plt.contour(dep_radius.value,
+    #                 np.linspace(np.nanmin(dep_radius.value),
+    #                             np.nanmax(dep_radius.value), num=10),
+    #                 colors='k', extent=axes_extent)
+    #     plt.plot([0.0, dx_line*np.sin(PA_Angle)],
+    #              [0.0, dx_line*np.cos(PA_Angle)], color='gray')
+    #     plt.plot([0.0, dx_line*np.sin(PA_Angle+90.*u.deg)],
+    #              [0.0, dx_line*np.cos(PA_Angle+90.*u.deg)], color='red')
+    #     plt.title('Deprojected radius, $r_{PA,i}$')
+    #     #
+    #     plt.subplot(1, 2, 2)
+    #     plt.imshow(Kep_velo.value, origin='lower', cmap='RdYlBu_r',
+    #                interpolation='none', extent=axes_extent)
+    #     plt.contour(Kep_velo.value,
+    #                 np.linspace(Vc.value - dv_disk,
+    #                             Vc.value + dv_disk,
+    #                             #np.nanmin(Kep_velo.value),
+    #                             #np.nanmax(Kep_velo.value),
+    #                             num=10),
+    #                 colors='k', extent=axes_extent)
+    #     plt.title('Projected $V_{Kep}$')
     # Store results on class
-    results = result_container()
+    # results = result_container()
     results.r = dep_radius
     # results.theta = angle_PA
     results.v = Kep_velo

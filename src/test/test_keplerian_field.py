@@ -58,7 +58,8 @@ def test_convolve_Vlsr(generate_dummy_file) -> None:
     assert not np.isnan(convolved_data).all()
 
     # Test convolve_Vlsr with dilation
-    convolved_data_dilated = convolve_Vlsr(V_lsr, header, dilation=True)
+    convolved_data_dilated = velocity_tools.keplerian_field.convolve_Vlsr(
+        V_lsr, header, dilation=True)
     assert convolved_data_dilated.shape == V_lsr.shape
     assert not np.isnan(convolved_data_dilated).all()
 
@@ -77,7 +78,7 @@ def test_generate_Vlsr(generate_dummy_file) -> None:
     results = velocity_tools.keplerian_field.generate_Vlsr(
         header, ra0, dec0, PA_Angle=142.*u.deg, inclination=inc0, 
         distance=110.02*u.pc, R_out=R_out, Mstar=2.2*u.Msun, 
-        Vc=5.2*u.km/u.s, do_plot=False)
+        Vc=5.2*u.km/u.s)
     # results2 = velocity_tools.keplerian_field.generate_Vlsr(
     #     header, ra0, dec0, PA_Angle=142.*u.deg, inclination=inc2, 
     #     distance=110.02*u.pc, R_out=R_out, Mstar=2.2*u.Msun, 
@@ -86,3 +87,29 @@ def test_generate_Vlsr(generate_dummy_file) -> None:
     assert results.v.shape == data.shape
     # Check that values outside R_out are NaN
     assert np.isnan(results.v[results.r > R_out]).all()
+
+
+# def test_generate_Vlsr() -> None:
+#     rdisk = 300 * u.au
+#     radius = np.linspace(1, 10, endpoint=True, num=5) * u.au
+#     angle = 0 * u.deg
+#     inclination = 0 * u.deg
+#     vc0 = 5 * u.km / u.s
+
+#     vel0 = velocity_tools.coordinate_offsets.generate_Vlsr(
+#         radius,
+#         angle,
+#         inclination=inclination,
+#         R_out=rdisk,
+#         Mstar=1.0 * u.Msun,
+#         Vc=0 * u.km / u.s,
+#     )
+#     vel1 = velocity_tools.coordinate_offsets.generate_Vlsr(
+#         radius, 
+#         angle, 
+#         inclination=inclination, 
+#         R_out=rdisk, 
+#         Mstar=1.0 * u.Msun, 
+#         Vc=vc0
+#     )
+#     assert ((vel1 - vel0) == vc0).all
