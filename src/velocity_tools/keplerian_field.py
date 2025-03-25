@@ -12,15 +12,27 @@ class result_container:
     pass
 
 def convolve_Vlsr(V_lsr, header, dilation=False):
-    """ Convolve Vlsr map with beam in header
-    If dilation is True, then mask all convolved data beyond
-    one beam.
+    """ 
+    It Convolves a pure theoretical Vlsr map with a requested beam.
+    The beam is setup using the FITS header of the expected observation.
+    The convolution would mimick (at least at first order) the effect of a 
+    finite beam size in the observations.
+    The header is also used to convert the beam into pixel units before 
+    convolving the map
+
+    param :
+    Vlsr : image with Velocity map to be convolved. It handles astropy.units.
+    header : FITS header with beam and pixel size information
+    dilation : bool, optional  
+        If dilation is True, then mask all convolved data beyond
+        one beam.
     """
-    pixscale=np.abs(header['cdelt1'])
-    if header['cunit1'] == 'arcsec':
-        pixscale *= u.arcsec
-    else:
-        pixscale *= u.deg
+    # pixscale=np.abs(header['cdelt1'])
+    pixscale = np.abs(header['cdelt1'])*u.Unit(header['cunit1'])
+    # if header['cunit1'] == 'arcsec':
+    #     pixscale *= u.arcsec
+    # else:
+    #     pixscale *= u.deg
     my_beam = Beam.from_fits_header(header)
     my_beam_kernel = my_beam.as_kernel(pixscale)
     if dilation == False:
@@ -42,14 +54,52 @@ def convolve_Vlsr(V_lsr, header, dilation=False):
         v_convolved[bad] = np.nan
         return v_convolved 
 
+@u.quantity_input#(R_out=u.au, Mstar=u.Msun, Vc=u.km/u.s, inclination)
+def keplerian_field(radius_2d:u.au, Pangle_2d:u.deg, 
+                    Mstar:u.Msun =1*u.Msun, 
+                    inclination:u.deg = 30*u.deg, 
+                    R_out:u.au = 300*u.au) -> u.km/u.s:
+    """
+    Keplerian velocity field, for a star of mass=Mstar, inclination angle with
+    respect of the sky of inclination.
+    The position in the disk is described in polar coordinates, radius and angle.
+    The outer disk radius is Rout.
+    It makes full use of astropy.units.
 
+    param :
+    radius : radius in distance units (e.g. u.au or u.pc)
+    angle : position angle with respect to major axis
+
+    Mstar : central stellar mass (e.g. u.Msun)
+    Vlsr : velocity of the star (u.km/u.s)
+    inclination : with units (e.g u.deg or u.rad)
+    R_out : Maximum radius of the disk. Position outside this radius are blanked
+    """
+    Kep_velo = 29.78 * np.sqrt(Mstar/u.Msun / (radius_2d/u.au)) \
+               * np.abs(np.sin(inclination)) * np.cos(Pangle_2d)*u.km/u.s
+    Kep_velo[radius_2d > R_out] = np.nan
+
+    return Kep_velo
 
 def generate_Vlsr(header, ra0, dec0, frame='fk5',
     PA_Angle=142.*u.deg, inclination=42.*u.deg, distance=110.02*u.pc,
     R_out=300.*u.au, Mstar=2.2*u.Msun, Vc=5.2*u.km/u.s, do_plot=False):
     """
-    Main geometry: major axis in deprojected lon variable, while lat is the minor axis
+    Keplerian velocity field, for a star of mass=Mstar, inclination angle with 
+    respect of the sky of inclination.
+    The position in the disk is described in polar coordinates, radius and angle.
+    The central velocity of the star is Vlsr, 
+    and the maximum outer disk radius is Rout
+    It makes full use of astropy.units.
 
+    param :
+    radius : radius in distance units (e.g. u.au or u.pc)
+    angle : position angle with respect to major axis
+
+    Mstar : central stellar mass (e.g. u.Msun)
+    Vlsr : velocity of the star (u.km/u.s)
+    inclination : with units (e.g u.deg or u.rad)
+    R_out : Maximum radius of the disk. Position outside this radius are blanked
     """
     #
     results = generate_offsets(header, ra0, dec0, frame=frame,
@@ -94,10 +144,14 @@ def generate_Vlsr(header, ra0, dec0, frame='fk5',
     dep_radius = np.clip(results.r.to('',
                          equivalencies=u.dimensionless_angles())*distance.to(u.au),
                          epsilon.to(u.au), None)
-    Kep_velo = 29.78 * np.sqrt(Mstar/u.Msun / (dep_radius/u.au)) \
-               * np.abs(np.sin(inclination)) * np.cos(angle_PA)*u.km/u.s
+    Kep_velo = keplerian_field(dep_radius, angle_PA, 
+                    Mstar=Mstar, 
+                    inclination=inclination,
+                    R_out=R_out) 
+    # Kep_velo = 29.78 * np.sqrt(Mstar/u.Msun / (dep_radius/u.au)) \
+    #            * np.abs(np.sin(inclination)) * np.cos(angle_PA)*u.km/u.s
     Kep_velo += Vc
-    Kep_velo[dep_radius > R_out] = np.nan
+    # Kep_velo[dep_radius > R_out] = np.nan
     #
     if do_plot:
         # Plot
