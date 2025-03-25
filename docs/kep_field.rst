@@ -123,7 +123,9 @@ The function is used as follows:
     ax1.set_title('PA=142')
 
 .. figure:: Figure_velocity_maps.png
-    :width: 400px
+    :width: 600px
     :align: center
-    :alt: Keplerian velocity field example
+    :alt: Keplerian velocity field example using the ``generate_Vlsr`` function. 
+    
+    The left and right panel differ only in the position angle used.
     
