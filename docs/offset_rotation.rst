@@ -1,5 +1,3 @@
-.. _doc_offset_rotation:
-
 Offsets and calculations using the spatial information
 ======================================================
 

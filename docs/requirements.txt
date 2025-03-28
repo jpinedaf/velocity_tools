@@ -1,1 +1,2 @@
 myst-parser>0.18
+sphinx-toolbox>=2.8.0

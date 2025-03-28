@@ -1,5 +1,3 @@
-.. _doc_velocity_fields:
-
 Velocity fields
 ===============
 

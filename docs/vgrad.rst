@@ -1,5 +1,3 @@
-.. _doc_vgrad:
-
 Velocity gradient calculation
 =============================
 
