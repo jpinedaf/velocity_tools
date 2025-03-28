@@ -4,6 +4,7 @@
 *.pyc
 #
 fits_files/
+*.fits
 *.egg-info
 build/
 dist/
