@@ -8,6 +8,10 @@ this is the same as used in `Goodman et al. (1993) <https://ui.adsabs.harvard.ed
 `Pineda et al. (2010) <https://ui.adsabs.harvard.edu/abs/2010ApJ...712L.116P>`_. 
 The velocity gradient is given in km/s/pc.
 
+
+Global velocity gradient
+------------------------
+
 The module allows for the determination of the global velocity gradient in the images. 
 This called as follows::
 
@@ -36,6 +40,10 @@ East-from-North. Velocities are reported in km/s.::
                'chisq': chisq, 'vc': vc, 'vc_err': vc_err,
                'v_pred': vp}
 
+
+Local velocity gradient
+-----------------------
+
 The module also allows for the determination of the local velocity gradient in an image.
 This is called as follows::
 
@@ -54,6 +62,9 @@ East-from-North. Velocities are reported in km/s.::
                'posang': posang, 'paerr': paerr, 
                'chisq': chisq, 'vc': vc, 'vc_err': vc,
                'v_pred': vp}
+
+Velocity gradient for an image
+------------------------------
 
 It is very common to report both the global and local velocity gradients in a paper.
 The global velocity gradient is a measure of the overall velocity gradient in the image, while the local velocity gradient is a measure of the velocity gradient at each pixel.

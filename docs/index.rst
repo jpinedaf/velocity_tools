@@ -1,12 +1,5 @@
 Welcome to Velocity Tools's documentation!
 ==========================================
-.. image:: https://img.shields.io/pypi/v/velocity-tools
-   :target: https://pypi.org/project/velocity-tools/
-   :alt: PyPI
-.. image:: https://img.shields.io/pypi/pyversions/velocity-tools
-   :target: https://pypi.org/project/velocity-tools/
-   :alt: Python version
-.. image:: https://img.shields.io/github/license/jpinedaf/velocity_tools
 
 The ``velocity_tools`` is a Python package with the aim of aiding the 
 analysis of velocity cubes and velocity fields. 
@@ -28,41 +21,41 @@ The package includes the following functionalities:
 
 Getting Started
 ^^^^^^^^^^^^^^^
+
 .. toctree::
      :maxdepth: 2
      :includehidden:
 
      installation.rst
 
-Velocity gradient calculation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Velocity gradient
+^^^^^^^^^^^^^^^^^
+
 .. toctree::
      :maxdepth: 2
-     :caption: Velocity gradient calculation
 
      vgrad.rst
 
-Offsets and Sky rotation calculation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Offsets and Sky rotation
+^^^^^^^^^^^^^^^^^^^^^^^^
 .. toctree::
      :maxdepth: 2
-     :caption: Offsets and Sky rotation calculation
 
      offset_rotation.rst
 
 Velocity fields
 ^^^^^^^^^^^^^^^
+
 .. toctree::
      :maxdepth: 2
-     :caption: Velocity fields
 
      Velocity_fields.rst
 
 Streamline model
 ^^^^^^^^^^^^^^^^
+
 .. toctree::
      :maxdepth: 2
-     :caption: Streamline model
 
      streamline.rst
 

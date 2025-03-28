@@ -1,5 +1,21 @@
-Velocity fields
-===============
+Keplerian Velocity fields
+=========================
+
+Keplerian velocity
+------------------
+The Keplerian velocity field is the velocity field of a rotating disk
+around a central mass. 
+The velocity field is for any position in the disk is given by the following equation:
+:math:`V_{\rm K} = \sqrt{G M_{\star} / R} \sin(inc) \cos(PA)` 
+where :math:`M_{\star}` is the mass of the central star,
+:math:`R` is the radius, :math:`G` is the gravitational constant,
+:math:`inc` is the inclination angle, 
+and :math:`PA` is position angle of the position in the disk with 
+respect to the observed semi-minor axis of the disk., 
+
+
+Velocity maps
+-------------
 
 We can create the Keplerian velocity field for a given mass and radius.
 The function ``keplerian_field`` calculates the Keplerian velocity field 

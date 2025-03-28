@@ -16,8 +16,8 @@ author = 'Jaime E. Pineda'
 extensions = [
     'myst_parser',
     'sphinx.ext.autosectionlabel',
-    'sphinx_toolbox.shields',
 ]
+# 'sphinx_toolbox.shields',
 source_suffix = {
     '.rst': 'restructuredtext',
     '.txt': 'markdown',
