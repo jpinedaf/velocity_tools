@@ -59,4 +59,4 @@ ignore_errors = true
 directory = "coverage_html_report"
 
 [project.urls]
-Homepage = "https://github.com/jpinedaf/velocity-tools"
+Homepage = "https://github.com/jpinedaf/velocity_tools"
