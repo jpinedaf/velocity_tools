@@ -1,5 +1,5 @@
 Welcome to Velocity Tools's documentation!
-===========================================
+==========================================
 
 The ``velocity_tools`` is a Python package with the aim of aiding the 
 analysis of velocity cubes and velocity fields. 
@@ -18,16 +18,50 @@ The package includes the following functionalities:
 * Calculation of velocity gradient, assuming solid velocity rotation. 
 * Streamline model using `Mendoza et al. (2009) <https://ui.adsabs.harvard.edu/abs/2009MNRAS.393..579M>`_ formalism.
 
+
+Getting Started
+^^^^^^^^^^^^^^^
+
 .. toctree::
      :maxdepth: 2
-     :caption: Contents:
+     :includehidden:
 
-     installation
-     usage
+     installation.rst
+
+Velocity gradient
+^^^^^^^^^^^^^^^^^
+
+.. toctree::
+     :maxdepth: 2
+
+     vgrad.rst
+
+Offsets and Sky rotation
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. toctree::
+     :maxdepth: 2
+
+     offset_rotation.rst
+
+Velocity fields
+^^^^^^^^^^^^^^^
+
+.. toctree::
+     :maxdepth: 2
+
+     Velocity_fields.rst
+
+Streamline model
+^^^^^^^^^^^^^^^^
+
+.. toctree::
+     :maxdepth: 2
+
+     streamline.rst
 
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

@@ -13,7 +13,11 @@ author = 'Jaime E. Pineda'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['myst_parser', 'sphinx.ext.autosectionlabel']
+extensions = [
+    'myst_parser',
+    'sphinx.ext.autosectionlabel',
+]
+# 'sphinx_toolbox.shields',
 source_suffix = {
     '.rst': 'restructuredtext',
     '.txt': 'markdown',
@@ -21,7 +25,7 @@ source_suffix = {
 }
 
 templates_path = ['_templates']
-exclude_patterns = []
+exclude_patterns = ['requirements.txt']
 
 
 # -- Options for HTML output -------------------------------------------------

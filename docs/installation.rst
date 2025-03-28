@@ -8,8 +8,12 @@ The following packages are required to run the code:
 * astropy
 * scipy
 * numpy
-
-
+* matplotlib
+* scikit-image
+* spectral-cube
+* radio-beam
+ 
+ 
 Installation
 ------------
 To install the latest stable release, you can type::

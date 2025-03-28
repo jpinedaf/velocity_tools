@@ -24,3 +24,7 @@ with contibutions from
 - astropy (>=5.0)
 - scipy (>=1.7)
 - numpy (>=1.21)
+- matplotlib (>=3.4)
+- scikit-image (>=0.9)
+- spectral-cube (>=0.5)
+- radio-beam (>=0.3)

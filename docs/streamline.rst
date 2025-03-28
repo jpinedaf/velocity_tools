@@ -1,10 +1,11 @@
-.. _doc_streamline:
-
-Streamline model
-================
+Using a Streamline Model
+*************************
 
 This module calculates the streamline model using the formalism of `Mendoza et al. (2009) <https://ui.adsabs.harvard.edu/abs/2009MNRAS.393..579M>`_.
 This module was created for the `Pineda et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020NatAs...4.1158P>`_ paper.
+A different tools to create and visualize the streamline model are available in the `PIMS <https://github.com/jjspeedie/pims>`_ package, 
+this package uses the original implementations from `velocity_tools` 
+but with a nice visualization option.
 
 The model calculates the streamline model under the influence of gravity from the 
 central region (constant throughout the calculation), where the parcel of 
@@ -13,7 +14,7 @@ This trajetory is further rotated by the inclination and position angle
 to obtain a trajectory that can be directly compared with the data.
 
 Setting up the streamline model
--------------------------------
+===============================
 In this implementation, the x-axis corresponds to -(RA), 
 the z-axis to Dec, 
 and the y-axis to the line of sight.
@@ -87,7 +88,7 @@ This is an example of how to setup the streamline model:
 
 
 How to determine PA and inclination
------------------------------------
+===================================
 
 The position angle (PA) and inclination are two important parameters that
 define the orientation of the angular momentum vector, or the orientation 
