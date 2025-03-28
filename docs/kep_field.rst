@@ -19,6 +19,7 @@ The function is used as follows:
     import numpy as np
     import matplotlib.pyplot as plt
     from astropy.wcs import WCS
+    from astropy.visualization.wcsaxes import WCSAxesSubplot
     from astropy.coordinates import SkyCoord
     plt.ion()
     color_map = plt.get_cmap('RdYlBu_r').copy()

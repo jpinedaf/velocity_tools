@@ -10,7 +10,8 @@ class result_container:
     """
     pass
 
-def convolve_Vlsr(V_lsr, header, dilation=False):
+# @u.quantity_input
+def convolve_Vlsr(V_lsr:np.ndarray, header, dilation:bool=False) -> np.ndarray:
     """ 
     It Convolves a pure theoretical Vlsr map with a requested beam.
     The beam is setup using the FITS header of the expected observation.
@@ -75,9 +76,10 @@ def keplerian_field(radius_2d:u.au, Pangle_2d:u.deg,
 
     return Kep_velo
 
-def generate_Vlsr(header, ra0, dec0, frame='fk5',
-    PA_Angle=142.*u.deg, inclination=42.*u.deg, distance=110.02*u.pc,
-    R_out=300.*u.au, Mstar=2.2*u.Msun, Vc=5.2*u.km/u.s) -> result_container:
+@u.quantity_input
+def generate_Vlsr(header, ra0:u.deg, dec0:u.deg, frame:str='fk5',
+    PA_Angle:u.deg=142.*u.deg, inclination:u.deg=42.*u.deg, distance:u.pc=110.0*u.pc,
+    R_out:u.au=300.*u.au, Mstar:u.Msun=2.2*u.Msun, Vc:u.km/u.s=5.2*u.km/u.s) -> result_container:
     """
     Keplerian velocity field, for a star of mass=Mstar, inclination angle with 
     respect of the sky of inclination.

@@ -206,6 +206,7 @@ def rotate_xyz(x, y, z, inc=30 * u.deg, pa=30 * u.deg):
     return xyz_new[0], xyz_new[1], xyz_new[2]
 
 
+@u.quantity_input
 def xyz_stream(mass=0.5*u.Msun, r0=1e4*u.au, theta0=30*u.deg,
                phi0=15*u.deg, omega=1e-14/u.s, v_r0=0*u.km/u.s,
                inc=0*u.deg, pa=0*u.deg, rmin=None, deltar=1*u.au):

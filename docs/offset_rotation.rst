@@ -121,3 +121,4 @@ integrated intensity map:
 
     cube = cube.with_mask(mask)
     moment0 = cube.moment0(axis=0)
+

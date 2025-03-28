@@ -22,5 +22,3 @@ Velocity fields is discussed in :ref:`doc_velocity_fields`
 Streamline model
 ----------------
 Streamline model is discussed in :ref:`doc_streamline`
-
-TODO
