@@ -44,9 +44,6 @@ def vfit(x, y, v, ev, distance=300.0*u.pc):
     # Obtain total weight, and average (x,y,v) to create new variables (dx,dy,dv)
     # which provide a lower uncertainty in the fit.
     #
-    
-    npts = x.shape
-    
     v_d = v.to(u.km / u.s).value
     ev_d = ev.to(u.km / u.s).value
     wt = 1.0 / ev_d**2
