@@ -1,4 +1,6 @@
 # velocity_tools
+![PyPI - License](https://img.shields.io/pypi/l/velocity_tools?color=red)
+
 Repository with a compilation of tools for velocity analysis
 It includes:
 - Calculation of Keplerian rotation velocity map.
