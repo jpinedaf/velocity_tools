@@ -1,5 +1,6 @@
 # velocity_tools
 ![PyPI - License](https://img.shields.io/pypi/l/velocity_tools?color=red)
+[![codecov](https://codecov.io/gh/jpinedaf/velocity_tools/graph/badge.svg?token=4JFPKTRSX0)](https://codecov.io/gh/jpinedaf/velocity_tools)
 
 Repository with a compilation of tools for velocity analysis
 It includes:
