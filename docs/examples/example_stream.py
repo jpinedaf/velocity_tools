@@ -1,8 +1,9 @@
-%run stream_lines.py
+# %run stream_lines.py
 import matplotlib.pyplot as plt
 import numpy as np
 import astropy.units as u
 from astropy.constants import G
+from velocity_tools import stream_lines
 
 plt.ion()
 
@@ -28,7 +29,7 @@ theta1 = stream_line(r, M=Mstar, theta0=theta0_1,
 theta2 = stream_line(r, M=Mstar, theta0=theta0_2, 
     Omega=Omega1, r0=r0)
 
-dphi2 = dphi(theta2, theta0=theta0_2)
+dphi2 = stream_lines.dphi(theta2, theta0=theta0_2)
 dphi1 = dphi(theta1, theta0=theta0_1)
 
 # theta2_p = stream_line(r, M=Mstar, theta0=theta0_2+10*u.deg,

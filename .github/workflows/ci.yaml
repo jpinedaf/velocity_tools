@@ -1,0 +1,36 @@
+name: CI
+
+on: [push]
+
+jobs:
+  run-tests:
+    strategy:
+      fail-fast: false
+
+      matrix:
+        # os: [ubuntu-latest, windows-latest, macos-latest]
+        # Cannot use windows-latest, because LaTeX is missing
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12-dev"]
+
+    name: Test
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip 
+          pip install .
+
+      - name: Run tests with pytest
+        run: |
+          pip install pytest pytest-cov
+          pytest --pyargs velocity_tools --cov=velocity_tools --import-mode=importlib --junitxml=pytest.xml  --cov-report=xml | tee pytest-coverage.txt

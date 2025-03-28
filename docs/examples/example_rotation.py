@@ -1,4 +1,4 @@
-%run stream_lines.py
+# %run stream_lines.py
 import numpy as np
 import astropy.units as u
 import matplotlib.pyplot as plt
@@ -20,8 +20,8 @@ plt.close()
 fig1, ax1 = plt.subplots(figsize=(7,7))
 ax1.plot([0, x_x], [0, y_x], color='red')
 ax1.plot([0, x_y], [0, y_y], color='red')
-ax1.plot([0, x_x_new], [0, y_x_new], color='blue')
-ax1.plot([0, x_y_new], [0, y_y_new], color='blue')
+ax1.plot([0, x_x_new[0]], [0, y_x_new[0]], color='blue')
+ax1.plot([0, x_y_new[0]], [0, y_y_new[0]], color='blue')
 ax1.axis('equal')
 ax1.set_xlabel('x')
 ax1.set_ylabel('y')

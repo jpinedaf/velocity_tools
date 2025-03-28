@@ -9,17 +9,17 @@ dependencies = [
   "astropy>=5.0",
   "scipy>=1.7",
   "numpy>=1.21",
+  "matplotlib>=3.4",
+  "scikit-image>=0.9",
+  "spectral-cube>=0.5",
+  "radio-beam>=0.3",
 ]
 requires-python = ">=3.7"
-authors = [
-  {name = "Jaime E. Pineda", email = "jpineda@mpe.mpg.de"},
-]
-maintainers = [
-  {name = "Jaime E. Pineda", email = "jpineda@mpe.mpg.de"},
-]
+authors = [{ name = "Jaime E. Pineda", email = "jpineda@mpe.mpg.de" }]
+maintainers = [{ name = "Jaime E. Pineda", email = "jpineda@mpe.mpg.de" }]
 description = "Tools to help analysis of velocity cubes and velocity fields."
 readme = "README.md"
-license = {text = "MIT License"}
+license = { text = "MIT License" }
 
 dynamic = ["version"]
 
@@ -27,7 +27,7 @@ dynamic = ["version"]
 
 [tool.setuptools]
 include-package-data = true
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }
 
 
 [tool.setuptools.packages.find]
@@ -39,19 +39,19 @@ branch = true
 source = ["velocity_tools"]
 
 [tool.pytest.ini_options]
-pythonpath = "src/"
+pythonpath = "src/test"
 addopts = [
-    "--import-mode=importlib"#,
-    # "--cov=prodige_core --cov-report html"
-    ]
+  "--import-mode=importlib", #,
+  # "--cov=prodige_core --cov-report html"
+]
 
 [tool.coverage.report]
 exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "if self.debug",
-    "if __name__ == .__main__.:"
-    ]
+  "pragma: no cover",
+  "def __repr__",
+  "if self.debug",
+  "if __name__ == .__main__.:",
+]
 ignore_errors = true
 
 [tool.coverage.html]
