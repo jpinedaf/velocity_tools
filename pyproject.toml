@@ -24,6 +24,7 @@ license = { text = "MIT License" }
 dynamic = ["version"]
 
 [tool.setuptools_scm]
+version_file = "src/velocity_tools/_version.py"
 
 [tool.setuptools]
 include-package-data = true
